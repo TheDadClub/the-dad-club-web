@@ -1,121 +1,118 @@
-import Link from "next/link";
-import SiteHeader from "../../../components/SiteHeader";
-import SiteFooter from "../../../components/SiteFooter";
+import PrivacyDocument from "../../../components/PrivacyDocument";
 
 const sections = [
   {
-    title: "What this notice covers",
+    title: "Who we are and what this covers",
     paragraphs: [
-      "This notice describes registrations of interest and enquiries through The Dad Club website. The mobile app has separate privacy information.",
-      "Bookings, payments and member accounts are not currently available through the website. This notice will be updated before those features collect information.",
+      "The Dad Club is currently operated by Peter Mann, trading as The Dad Club, in South Australia. In this notice, 'we', 'us' and 'our' refer to that operator.",
+      "This notice covers the website at www.thedadclub.com.au, registrations of interest and related enquiries. The Dad Club mobile app has a separate privacy notice.",
+      "The current website does not provide bookings, payments or member accounts. We will update this notice when new features change how personal information is handled.",
     ],
   },
   {
-    title: "Information you provide",
+    title: "Information we collect",
     paragraphs: [
       "When you register your interest, we collect your name, email address, suburb or town, stage of fatherhood and any optional message you provide.",
-      "We record when your registration was created, your agreement to be contacted and the version of the contact consent wording.",
-      "We also record the status of the confirmation email and, when applicable, the time our email provider accepted it for sending. This does not prove delivery to your inbox.",
-      "If you email us, we receive your email address and the information you include in your message. Please avoid including sensitive personal or health information in the interest form.",
+      "We also record a registration identifier, creation time, your agreement to be contacted, the version of the consent wording and the confirmation email status.",
+      "If you email us, we receive your email address and the information you include. Please avoid providing sensitive personal or health information through the registration form.",
+      "Our hosting and security providers process technical information associated with website requests, such as IP addresses, browser and device information, request times and security or error events.",
     ],
   },
   {
-    title: "How we use your information",
+    title: "Why we collect it",
     paragraphs: [
-      "We use your details to manage your registration, send a confirmation, respond to enquiries and contact you about upcoming Dad Club programs.",
-      "Your suburb or town helps us understand where people are interested in attending. Your stage of fatherhood helps us identify potentially relevant program options.",
-      "Required fields allow us to process your registration. The message field is optional. You can browse the website without registering.",
+      "We use registration details to manage your interest, send a confirmation, respond to enquiries and contact you about upcoming Dad Club programs.",
+      "Your suburb or town helps us understand where people would like to attend. Your stage of fatherhood helps us identify potentially relevant program options.",
+      "Technical information supports website delivery, troubleshooting and protection against misuse.",
+      "The form identifies required fields. Without those details and your agreement to contact, we cannot process the registration. You can browse the website without registering, and the message field is optional.",
     ],
   },
   {
-    title: "Where registrations are stored",
+    title: "Our service providers",
     paragraphs: [
-      "Registrations are stored in a Supabase database configured in the Sydney region. The website sends your form details through its server to that database.",
-      "Choosing Sydney for the database does not mean all service providers process every type of information exclusively in Australia. Email delivery, security verification, support and operational services may involve overseas processing.",
-      "Final hosting arrangements and relevant provider processing locations will be confirmed in this notice before public launch.",
+      "Vercel hosts the website and runs the server code that processes registrations. Form submissions pass through Vercel before reaching our database.",
+      "Supabase stores registration information in a database configured in the Sydney region.",
+      "Cloudflare Turnstile provides the form's automated-submission check. Your browser connects to Cloudflare, which processes technical signals used for verification. Our server sends the verification token to Cloudflare, without adding the personal details entered in the form.",
+      "Resend sends registration confirmation emails. Our current integration provides your email address, the confirmation message and a technical registration identifier. It does not include your name, location, stage of fatherhood or optional message in the email request.",
+      "Microsoft 365 handles messages sent to and from hello@thedadclub.com.au, including replies to confirmation emails.",
     ],
   },
   {
-    title: "Who can access registrations",
+    title: "Access and disclosure",
     paragraphs: [
-      "The registration table is configured to block direct access by public website visitors. Administrative access is available through the project dashboard and authorised server credentials.",
-      "Supabase processes information to provide the database service. People authorised to manage The Dad Club registrations may access details for that purpose.",
-      "Registration details are not displayed publicly on the website.",
+      "Registration details are available to the operator and people authorised to manage enquiries and programs. The database is configured to prevent public website visitors from directly reading registration records.",
+      "Service providers process information needed to deliver their services. We may also disclose information where required by law or to obtain professional assistance necessary to manage a privacy or security matter.",
+      "We do not sell registration information or publish it on the website.",
     ],
   },
   {
-    title: "Confirmation emails through Resend",
+    title: "Overseas processing",
     paragraphs: [
-      "We use Resend to send an automatic confirmation after a new registration is saved.",
-      "Our current email integration sends Resend your email address and the confirmation message. It does not include your name, suburb or town, stage of fatherhood or optional form message.",
-      "The request also includes a technical identifier linked to the registration, used to help prevent duplicate email requests.",
-      "Resend processes the recipient address, message content and sending information to provide email delivery. Delivery records may include acceptance, delivery, delay, bounce or complaint events.",
-      "A confirmation email is not a booking confirmation. Replies are directed to hello@thedadclub.com.au and handled through our existing mailbox provider.",
-      "Resend's privacy policy and data processing information are linked below.",
+      "The registration database is configured in Sydney, but this is not a promise that all information remains in Australia.",
+      "Our providers operate internationally. Hosting, email delivery, security checks, support and operational systems may involve processing in the United States and other countries used by those providers and their subprocessors.",
+      "Provider locations depend on the service and configuration and can change. The privacy and subprocessor information linked below provides further details. Contact us if you need information about a particular service.",
     ],
   },
   {
-    title: "Spam prevention with Cloudflare Turnstile",
+    title: "Cookies and email tracking",
     paragraphs: [
-      "The registration form uses Cloudflare Turnstile to help identify automated submissions. Your browser connects to Cloudflare to complete verification.",
-      "Cloudflare processes technical information associated with the check, which may include your IP address, browser and device information and signals used to assess automated activity.",
-      "The website sends the resulting verification token to Cloudflare for server-side validation before saving a registration. Our verification request does not include the personal details entered in the form.",
-      "Further information is available in Cloudflare's privacy policy, linked below.",
+      "We have not added advertising trackers or audience analytics to the current website. Hosting and security services may use browser storage or similar technical mechanisms needed to operate and protect the service.",
+      "Open and click tracking have not been enabled for our Resend confirmation emails. We do not use those confirmations to measure whether you opened the message or clicked a link.",
+      "Email delivery information, such as acceptance, delivery, delay, bounce or complaint events, may still be processed. A database status of 'sent' means the email provider accepted the message, not that it necessarily reached your inbox.",
     ],
   },
   {
-    title: "Cookies, tracking and technical information",
+    title: "Security",
     paragraphs: [
-      "The registration feature does not add advertising trackers or website analytics cookies.",
-      "Cloudflare's verification service processes technical information as described above. Email tracking settings will be checked and documented before public launch.",
-      "Website requests include technical information such as IP addresses and browser information. Infrastructure logging and retention depend on the final hosting configuration and will be documented before public launch.",
-    ],
-  },
-  {
-    title: "Contact preferences",
-    paragraphs: [
-      "The form asks for your agreement to be contacted about your enquiry and upcoming programs. Registering interest does not book a place or commit you to a payment.",
-      "You can withdraw your interest or ask us to stop contacting you by replying to our email or contacting hello@thedadclub.com.au.",
+      "We use HTTPS for website connections, restrict database access and keep administrative credentials on the server rather than in public browser code.",
+      "These measures reduce risk, but no internet service or storage system can guarantee absolute security. Please do not use the registration form to send confidential clinical information.",
     ],
   },
   {
     title: "Retention and deletion",
     paragraphs: [
-      "We retain registration information while managing your interest and related correspondence. A routine retention and deletion schedule will be confirmed before public launch.",
-      "Email providers retain messages and operational records according to their service settings and retention arrangements. Removing a registration from our database does not automatically remove every copy held in email systems or backups.",
-      "You can request deletion of your registration. We will explain any information that needs to be retained and applicable limitations.",
+      "We review interest registrations when they reach 12 months old and delete records no longer needed for the purpose for which they were collected. This is a review process, not an automatic deletion feature.",
+      "Information may be retained longer where there is an ongoing enquiry or another necessary reason, including a legal obligation. We do not retain information indefinitely simply because it was collected.",
+      "Email correspondence, provider logs and backups may have separate retention periods. Deleting a database registration does not instantly remove all copies from email systems or backups.",
+      "You can ask us to remove your registration earlier. We will explain any information we need to retain and any relevant limitations.",
     ],
   },
   {
-    title: "Access and corrections",
+    title: "Your choices, access and corrections",
     paragraphs: [
-      "You can ask to access or correct your registration details by emailing hello@thedadclub.com.au.",
-      "We may need to verify your identity before providing information or making changes. Please provide only the information needed to explain your request.",
+      "You can withdraw your interest, ask us to stop program contact, request access to your information, correct inaccurate details or request deletion by emailing hello@thedadclub.com.au.",
+      "You can also reply to a program email to withdraw from further updates. Registering interest does not book a session or commit you to payment.",
+      "We may need to verify your identity before providing or changing information. We will respond within a reasonable time and explain if we cannot fulfil a request.",
     ],
   },
   {
-    title: "Privacy questions or complaints",
+    title: "Privacy concerns and complaints",
     paragraphs: [
-      "If you have a concern about how your information has been handled, contact hello@thedadclub.com.au with a description of the issue.",
-      "We will review your concern, respond and discuss appropriate next steps.",
+      "Email hello@thedadclub.com.au with a description of your concern. Please include enough information for us to investigate without adding unnecessary sensitive details.",
+      "We will acknowledge the concern, investigate and aim to provide a substantive response within 30 days. If more time is needed, we will explain why.",
+      "If you remain dissatisfied, you can seek guidance from the Office of the Australian Information Commissioner at www.oaic.gov.au about available complaint options and whether the matter falls within its jurisdiction.",
     ],
   },
   {
-    title: "Separate from app data and research",
+    title: "App information and research",
     paragraphs: [
-      "The website interest form does not access the profiles, dates, check-ins or saved cards stored locally by The Dad Club app.",
+      "The website registration process does not access profiles, journey dates, check-ins or saved cards stored locally in The Dad Club app.",
       "Registering interest does not enrol you in research. Any future research participation would require a separate process, appropriate ethics review, clear information and explicit informed consent.",
     ],
   },
   {
     title: "Changes to this notice",
     paragraphs: [
-      "We will update this notice as website features and service arrangements change. The revision date appears at the top of this page.",
+      "We will update this notice when our services, operator or information-handling practices change. The revision date appears at the top of this page.",
     ],
   },
 ];
 
 const providers = [
+  {
+    label: "Vercel Privacy Notice",
+    href: "https://vercel.com/legal/privacy-notice",
+  },
   {
     label: "Supabase Privacy Policy",
     href: "https://supabase.com/privacy",
@@ -129,89 +126,22 @@ const providers = [
     href: "https://resend.com/legal/privacy-policy",
   },
   {
-    label: "Resend Data Processing Addendum",
-    href: "https://resend.com/legal/dpa",
+    label: "Resend Subprocessors",
+    href: "https://resend.com/legal/subprocessors",
+  },
+  {
+    label: "Microsoft Privacy Statement",
+    href: "https://www.microsoft.com/en-us/privacy/privacystatement",
   },
 ];
 
 export default function WebsitePrivacyPage() {
   return (
-    <div className="min-h-screen bg-[#F4F0E5] text-[#173A2C]">
-      <SiteHeader />
-
-      <main className="mx-auto max-w-4xl px-5 py-14 md:px-10 md:py-24">
-        <Link
-          href="/privacy"
-          className="text-sm font-bold hover:text-[#C96632]"
-        >
-          ← Privacy hub
-        </Link>
-
-        <h1 className="mt-7 text-4xl font-black tracking-tight md:text-6xl">
-          WEBSITE PRIVACY
-        </h1>
-
-        <p className="mt-4 text-sm text-[#52645A]">
-          Development draft · Updated 15 October 2026
-        </p>
-
-        <div className="mt-8 rounded-2xl bg-[#E8EBDD] p-6 text-sm leading-relaxed">
-          This notice describes the website currently being tested.
-          Legal operator details, final hosting and mailbox provider
-          arrangements, provider processing locations, email tracking
-          settings and the retention schedule will be confirmed before
-          public launch.
-        </div>
-
-        <div className="mt-10 space-y-9">
-          {sections.map((section) => (
-            <section key={section.title}>
-              <h2 className="text-2xl font-black tracking-tight">
-                {section.title}
-              </h2>
-
-              {section.paragraphs.map((paragraph) => (
-                <p
-                  key={paragraph}
-                  className="mt-4 leading-relaxed text-[#52645A]"
-                >
-                  {paragraph}
-                </p>
-              ))}
-            </section>
-          ))}
-        </div>
-
-        <section className="mt-10 rounded-[28px] bg-[#E8EBDD] p-7">
-          <h2 className="text-xl font-black">
-            Provider privacy information
-          </h2>
-
-          <ul className="mt-4 space-y-4 text-sm font-semibold">
-            {providers.map((provider) => (
-              <li key={provider.href}>
-                <a
-                  href={provider.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-4"
-                >
-                  {provider.label} ↗
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <a
-          href="mailto:hello@thedadclub.com.au"
-          className="mt-10 inline-block break-all font-semibold underline underline-offset-4"
-        >
-          hello@thedadclub.com.au
-        </a>
-      </main>
-
-      <SiteFooter />
-    </div>
+    <PrivacyDocument
+      title="WEBSITE PRIVACY"
+      introduction="How we handle your information when you visit the website, register your interest or contact The Dad Club."
+      sections={sections}
+      providers={providers}
+    />
   );
 }

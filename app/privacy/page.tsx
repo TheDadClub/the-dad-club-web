@@ -8,16 +8,16 @@ const policies = [
     label: "THE WEBSITE",
     title: "Website privacy",
     description:
-      "How we handle details provided through our website, including registrations of interest and enquiries.",
-    status: "Current development version",
+      "How we handle website registrations, confirmation emails, enquiries and information used to operate and protect the site.",
+    status: "Website and interest registrations",
   },
   {
     href: "/privacy/app",
     label: "THE APP",
     title: "App privacy",
     description:
-      "Privacy information for The Dad Club mobile app, separate from website registrations.",
-    status: "Policy being finalised",
+      "How the current app handles locally stored profiles, journey dates, check-ins and saved content.",
+    status: "Device-only version · Release review",
   },
 ];
 
@@ -36,8 +36,8 @@ export default function PrivacyPage() {
         </h1>
 
         <p className="mt-7 max-w-2xl text-base leading-relaxed text-[#52645A] sm:text-lg">
-          The website and app serve different purposes. Choose the
-          privacy information relevant to the service you use.
+          The website and app handle information differently.
+          Choose the notice relevant to the service you use.
         </p>
 
         <div className="mt-12 grid gap-6 md:grid-cols-2">
@@ -64,21 +64,28 @@ export default function PrivacyPage() {
               </p>
 
               <p className="mt-5 text-sm font-extrabold">
-                VIEW DETAILS →
+                READ THE NOTICE →
               </p>
             </Link>
           ))}
         </div>
 
-        <div className="mt-10 rounded-[28px] bg-[#E8EBDD] p-7">
-          <h2 className="text-xl font-black">A question about privacy?</h2>
+        <section className="mt-10 rounded-[28px] bg-[#E8EBDD] p-7">
+          <h2 className="text-xl font-black">
+            Questions, corrections or removal requests?
+          </h2>
+
+          <p className="mt-4 text-sm leading-relaxed text-[#52645A]">
+            Contact Peter Mann, trading as The Dad Club.
+          </p>
+
           <a
             href="mailto:hello@thedadclub.com.au"
             className="mt-4 inline-block break-all text-sm font-semibold underline underline-offset-4"
           >
             hello@thedadclub.com.au
           </a>
-        </div>
+        </section>
       </main>
 
       <SiteFooter />
