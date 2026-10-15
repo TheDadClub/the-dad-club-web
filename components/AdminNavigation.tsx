@@ -8,6 +8,7 @@ const sections = [
   { href: "/admin", label: "Interest registrations" },
   { href: "/admin/members", label: "Members" },
   { href: "/admin/sessions", label: "Sessions" },
+  { href: "/admin/bookings", label: "Bookings" },
 ];
 
 export default function AdminNavigation() {

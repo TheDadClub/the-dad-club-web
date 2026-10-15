@@ -19,6 +19,11 @@ type Entitlement = {
   status: "available" | "used" | "revoked";
 };
 
+type ReservedBooking = {
+  member_id: string;
+  session_number: number;
+};
+
 export type MemberSearchParams = {
   edit?: string;
   error?: string;
@@ -39,12 +44,6 @@ const sessionNames = [
   "The Next Chapter",
 ];
 
-const entitlementLabels = {
-  available: "Available",
-  used: "Used",
-  revoked: "Revoked",
-};
-
 const errors: Record<string, string> = {
   invalid: "Check the required fields, email address and dates.",
   duplicate: "A member with that email address already exists.",
@@ -53,6 +52,16 @@ const errors: Record<string, string> = {
 
 const inputClass =
   "mt-2 w-full min-w-0 rounded-xl border border-[#173A2C]/20 bg-[#FBF8F0] px-4 py-3 text-base focus:border-[#C96632] focus:outline-none focus:ring-2 focus:ring-[#C96632]/25";
+
+const entitlementStyles = {
+  Available: "bg-[#E8EBDD]/70 text-[#173A2C]",
+  Booked: "bg-[#173A2C] text-[#F4F0E5]",
+  Used: "bg-[#173A2C]/10 text-[#173A2C]",
+  Revoked: "bg-[#C96632]/15 text-[#8D3E21]",
+  "Needs review": "bg-[#C96632]/15 text-[#8D3E21]",
+};
+
+type EntitlementLabel = keyof typeof entitlementStyles;
 
 function displayDate(value: string) {
   return new Intl.DateTimeFormat("en-AU", {
@@ -125,21 +134,65 @@ export default async function MemberManager({
   }
 
   let entitlements: Entitlement[] = [];
+  let reservedBookings: ReservedBooking[] = [];
 
   if (members.length > 0) {
-    const { data, error } = await database
-      .from("member_entitlements")
-      .select("member_id,session_number,status")
-      .in(
-        "member_id",
-        members.map((member) => member.id),
-      );
+    const memberIds = members.map((member) => member.id);
 
-    if (error) {
-      throw new Error("Unable to load member entitlements.");
+    const [entitlementsResult, bookingsResult] = await Promise.all([
+      database
+        .from("member_entitlements")
+        .select("member_id,session_number,status")
+        .in("member_id", memberIds),
+
+      database
+        .from("session_bookings")
+        .select("member_id,session_number")
+        .in("member_id", memberIds)
+        .eq("status", "booked"),
+    ]);
+
+    if (entitlementsResult.error || bookingsResult.error) {
+      throw new Error("Unable to load member entitlements and bookings.");
     }
 
-    entitlements = (data ?? []) as Entitlement[];
+    entitlements = (entitlementsResult.data ?? []) as Entitlement[];
+    reservedBookings = (bookingsResult.data ?? []) as ReservedBooking[];
+  }
+
+  const entitlementLookup = new Map(
+    entitlements.map((item) => [
+      `${item.member_id}:${item.session_number}`,
+      item,
+    ]),
+  );
+
+  const bookedKeys = new Set(
+    reservedBookings.map(
+      (item) => `${item.member_id}:${item.session_number}`,
+    ),
+  );
+
+  function entitlementLabel(
+    memberId: string,
+    sessionNumber: number,
+  ): EntitlementLabel {
+    const key = `${memberId}:${sessionNumber}`;
+    const entitlement = entitlementLookup.get(key);
+    const booked = bookedKeys.has(key);
+
+    if (!entitlement) return "Needs review";
+
+    // Surface inconsistent records instead of showing a misleading label.
+    if (booked && entitlement.status !== "available") {
+      return "Needs review";
+    }
+
+    if (entitlement.status === "used") return "Used";
+    if (entitlement.status === "revoked") return "Revoked";
+    if (booked) return "Booked";
+
+    return "Available";
   }
 
   const total = count ?? 0;
@@ -148,9 +201,7 @@ export default async function MemberManager({
   return (
     <div className="min-h-screen bg-[#F4F0E5] text-[#173A2C]">
       <main className="mx-auto max-w-6xl px-5 py-10 md:px-10">
-        <h1 className="text-4xl font-black tracking-tight">
-          Members
-        </h1>
+        <h1 className="text-4xl font-black tracking-tight">Members</h1>
 
         <p className="mt-4 max-w-3xl leading-relaxed text-[#52645A]">
           Manage member contact details and their five session
@@ -341,6 +392,11 @@ export default async function MemberManager({
             </Link>
           </div>
 
+          <p className="mt-3 text-sm leading-relaxed text-[#52645A]">
+            Available means ready to book. Booked means a place is
+            reserved. Used means attendance has been recorded.
+          </p>
+
           <div className="mt-6 space-y-4">
             {members.map((member) => (
               <article
@@ -402,29 +458,34 @@ export default async function MemberManager({
 
                 <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {sessionNames.map((title, index) => {
-                    const entitlement = entitlements.find(
-                      (item) =>
-                        item.member_id === member.id &&
-                        item.session_number === index + 1,
-                    );
+                    const label = entitlementLabel(member.id, index + 1);
 
                     return (
                       <li
                         key={title}
-                        className="rounded-xl bg-[#E8EBDD]/70 p-3 text-sm"
+                        className={`rounded-xl p-3 text-sm ${entitlementStyles[label]}`}
                       >
                         <p className="font-bold">
                           {index + 1}. {title}
                         </p>
-                        <p className="mt-1 text-[#52645A]">
-                          {entitlement
-                            ? entitlementLabels[entitlement.status]
-                            : "Missing — needs review"}
-                        </p>
+                        <p className="mt-1">{label}</p>
                       </li>
                     );
                   })}
                 </ul>
+
+                {sessionNames.some(
+                  (_, index) =>
+                    entitlementLabel(member.id, index + 1) === "Booked",
+                ) && (
+                  <Link
+                    href="/admin/bookings"
+                    prefetch={false}
+                    className="mt-5 inline-block text-sm font-bold underline underline-offset-4"
+                  >
+                    Manage bookings →
+                  </Link>
+                )}
               </article>
             ))}
 
