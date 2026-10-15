@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createClient } from "@supabase/supabase-js";
+import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { createAuthClient } from "./supabase/server";
 
@@ -22,6 +23,10 @@ export function createAdminDatabase() {
 }
 
 export async function requireAdmin() {
+  // Wait for a real request before authentication or database work.
+  // Private admin content must not be generated during prerendering.
+  await connection();
+
   const auth = await createAuthClient();
 
   const {
