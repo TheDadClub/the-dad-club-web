@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { requireAdmin } from "../lib/admin";
-import { signOut } from "../app/admin/actions";
 import { saveSession } from "../app/admin/sessions/actions";
 import {
   displaySessionDate,
@@ -20,7 +19,7 @@ const fields =
   "id, session_number, starts_at, ends_at, venue_name, venue_address, capacity, status, admin_notes";
 
 const inputClass =
-  "mt-2 w-full rounded-xl border border-[#173A2C]/20 bg-[#FBF8F0] px-4 py-3 text-base focus:border-[#C96632] focus:outline-none focus:ring-2 focus:ring-[#C96632]/25";
+  "mt-2 w-full min-w-0 rounded-xl border border-[#173A2C]/20 bg-[#FBF8F0] px-4 py-3 text-base focus:border-[#C96632] focus:outline-none focus:ring-2 focus:ring-[#C96632]/25";
 
 const statusClasses: Record<string, string> = {
   draft: "bg-[#E8EBDD] text-[#173A2C]",
@@ -85,37 +84,9 @@ export default async function SessionManager({
 
   return (
     <div className="min-h-screen bg-[#F4F0E5] text-[#173A2C]">
-      <header className="bg-[#173A2C] text-[#F4F0E5]">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-6 md:px-10">
-          <Link href="/admin" className="text-lg font-black">
-            THE DAD CLUB → ADMIN
-          </Link>
-
-          <nav
-            aria-label="Admin navigation"
-            className="flex flex-wrap items-center gap-5 text-sm font-semibold"
-          >
-            <Link href="/admin" prefetch={false}>
-              Interest list
-            </Link>
-            <Link href="/admin/sessions" aria-current="page" prefetch={false}>
-              Sessions
-            </Link>
-            <form action={signOut}>
-              <button
-                type="submit"
-                className="rounded-full border border-white/40 px-4 py-2"
-              >
-                Sign out
-              </button>
-            </form>
-          </nav>
-        </div>
-      </header>
-
       <main className="mx-auto max-w-6xl px-5 py-10 md:px-10">
         <h1 className="text-4xl font-black tracking-tight">
-          Session management.
+          Sessions
         </h1>
 
         <p className="mt-4 max-w-3xl leading-relaxed text-[#52645A]">
@@ -137,7 +108,7 @@ export default async function SessionManager({
 
         <section
           id="session-form"
-          className="mt-8 scroll-mt-6 rounded-[28px] border border-[#173A2C]/15 bg-white/60 p-6 sm:p-8"
+          className="mt-8 scroll-mt-6 rounded-[28px] border border-[#173A2C]/15 bg-[#FBF8F0] p-6 sm:p-8"
         >
           <div className="flex flex-wrap items-center justify-between gap-4">
             <h2 className="text-2xl font-black">
@@ -147,6 +118,7 @@ export default async function SessionManager({
             {editing && (
               <Link
                 href="/admin/sessions#session-form"
+                prefetch={false}
                 className="text-sm font-bold underline underline-offset-4"
               >
                 Cancel editing / create new
@@ -157,7 +129,11 @@ export default async function SessionManager({
           {editMissing ? (
             <p className="mt-5">
               Session not found.{" "}
-              <Link href="/admin/sessions" className="underline">
+              <Link
+                href="/admin/sessions"
+                prefetch={false}
+                className="underline"
+              >
                 Return to sessions
               </Link>
             </p>
@@ -215,7 +191,7 @@ export default async function SessionManager({
                     </select>
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <label htmlFor="starts_at" className="text-sm font-bold">
                       Starts — Adelaide time
                     </label>
@@ -232,7 +208,7 @@ export default async function SessionManager({
                     />
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <label htmlFor="ends_at" className="text-sm font-bold">
                       Ends — Adelaide time
                     </label>

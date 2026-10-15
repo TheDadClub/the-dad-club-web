@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { requireAdmin } from "../lib/admin";
-import { signOut } from "../app/admin/actions";
 
 type SearchParams = Promise<{
   page?: string | string[];
@@ -39,7 +38,6 @@ export default async function AdminDashboard({
 }: {
   searchParams: SearchParams;
 }) {
-  // Do not move data queries above this authorisation check.
   const { user, database } = await requireAdmin();
   const params = await searchParams;
 
@@ -84,37 +82,18 @@ export default async function AdminDashboard({
 
   return (
     <div className="min-h-screen bg-[#F4F0E5] text-[#173A2C]">
-      <header className="border-b border-[#173A2C]/15 bg-[#173A2C] text-[#F4F0E5]">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-5 px-5 py-6 md:px-10">
-          <div>
-            <p className="text-lg font-black">THE DAD CLUB →</p>
-            <p className="mt-1 text-xs text-[#D8E1D8]">
-              Private administration
-            </p>
-          </div>
-
-          <div className="flex items-center gap-5 text-sm font-semibold">
-            <Link href="/">View website</Link>
-            <form action={signOut}>
-              <button
-                type="submit"
-                className="rounded-full border border-[#F4F0E5]/40 px-5 py-3 hover:bg-white/10"
-              >
-                Sign out
-              </button>
-            </form>
-          </div>
-        </div>
-      </header>
-
       <main className="mx-auto max-w-6xl px-5 py-10 md:px-10">
-        <p className="break-all text-sm text-[#52645A]">
-          Signed in as {user.email}
+        <h1 className="text-4xl font-black tracking-tight">
+          Interest registrations
+        </h1>
+
+        <p className="mt-4 max-w-3xl leading-relaxed text-[#52645A]">
+          Review enquiries from dads interested in joining The Dad Club.
         </p>
 
-        <h1 className="mt-3 text-4xl font-black tracking-tight">
-          Your dashboard.
-        </h1>
+        <p className="mt-3 break-all text-sm text-[#52645A]">
+          Signed in as {user.email}
+        </p>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl border border-[#173A2C]/15 bg-[#FBF8F0] p-6">

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { requireAdmin } from "../lib/admin";
-import { signOut } from "../app/admin/actions";
 import { saveMember } from "../app/admin/members/actions";
 
 type Member = {
@@ -53,7 +52,7 @@ const errors: Record<string, string> = {
 };
 
 const inputClass =
-  "mt-2 w-full rounded-xl border border-[#173A2C]/25 bg-white px-4 py-3 text-base text-[#173A2C] focus:outline-none focus:ring-2 focus:ring-[#C96632]";
+  "mt-2 w-full min-w-0 rounded-xl border border-[#173A2C]/20 bg-[#FBF8F0] px-4 py-3 text-base focus:border-[#C96632] focus:outline-none focus:ring-2 focus:ring-[#C96632]/25";
 
 function displayDate(value: string) {
   return new Intl.DateTimeFormat("en-AU", {
@@ -105,7 +104,7 @@ export default async function MemberManager({
   if (params.edit) {
     const validId =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        params.edit
+        params.edit,
       );
 
     if (validId) {
@@ -133,7 +132,7 @@ export default async function MemberManager({
       .select("member_id,session_number,status")
       .in(
         "member_id",
-        members.map((member) => member.id)
+        members.map((member) => member.id),
       );
 
     if (error) {
@@ -147,73 +146,24 @@ export default async function MemberManager({
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <main className="min-h-screen bg-[#F4F0E5] px-5 py-8 text-[#173A2C] md:px-10 md:py-12">
-      <div className="mx-auto max-w-6xl">
-        <header className="flex flex-wrap items-center justify-between gap-5">
-          <div>
-            <p className="text-xs font-extrabold tracking-[0.18em] text-[#C96632]">
-              THE DAD CLUB · PRIVATE ADMIN
-            </p>
-            <h1 className="mt-3 text-4xl font-black tracking-tight">
-              Members
-            </h1>
-          </div>
+    <div className="min-h-screen bg-[#F4F0E5] text-[#173A2C]">
+      <main className="mx-auto max-w-6xl px-5 py-10 md:px-10">
+        <h1 className="text-4xl font-black tracking-tight">
+          Members
+        </h1>
 
-          <div className="flex items-center gap-5 text-sm font-bold">
-            <Link href="/" prefetch={false} className="underline">
-              Website
-            </Link>
-
-            <form action={signOut}>
-              <button
-                type="submit"
-                className="rounded-full border border-[#173A2C]/30 px-5 py-3"
-              >
-                Sign out
-              </button>
-            </form>
-          </div>
-        </header>
-
-        <nav
-          aria-label="Admin navigation"
-          className="mt-8 flex flex-wrap gap-3 text-sm font-bold"
-        >
-          <Link
-            href="/admin"
-            prefetch={false}
-            className="rounded-full border border-[#173A2C]/25 px-5 py-3"
-          >
-            Interest registrations
-          </Link>
-          <Link
-            href="/admin/sessions"
-            prefetch={false}
-            className="rounded-full border border-[#173A2C]/25 px-5 py-3"
-          >
-            Sessions
-          </Link>
-          <Link
-            href="/admin/members"
-            prefetch={false}
-            aria-current="page"
-            className="rounded-full bg-[#173A2C] px-5 py-3 text-[#F4F0E5]"
-          >
-            Members
-          </Link>
-        </nav>
-
-        <p className="mt-8 max-w-3xl leading-relaxed text-[#52645A]">
+        <p className="mt-4 max-w-3xl leading-relaxed text-[#52645A]">
           Manage member contact details and their five session
-          entitlements. Adding a member does not create a login, take
-          payment, book sessions or send an email.
+          entitlements.
+        </p>
+
+        <p className="mt-4 rounded-xl bg-[#E8EBDD] p-4 text-sm leading-relaxed">
+          Adding a member does not create a login, take payment,
+          book sessions or send an email.
         </p>
 
         {params.saved === "1" && (
-          <p
-            role="status"
-            className="mt-6 rounded-xl border border-[#173A2C]/20 bg-[#E8EBDD] p-4 font-bold"
-          >
+          <p role="status" className="mt-6 font-bold">
             Member saved.
           </p>
         )}
@@ -221,16 +171,17 @@ export default async function MemberManager({
         {params.error && (
           <p
             role="alert"
-            className="mt-6 rounded-xl border border-red-700/30 bg-red-50 p-4 text-red-900"
+            className="mt-6 rounded-xl bg-[#C96632]/10 p-4 text-sm"
           >
-            {errors[params.error] ?? "Something went wrong. Please try again."}
+            {errors[params.error] ??
+              "Something went wrong. Please try again."}
             {" "}Your changes were not saved.
           </p>
         )}
 
         <section
           id="member-form"
-          className="mt-8 scroll-mt-6 rounded-3xl border border-[#173A2C]/15 bg-[#FBF8F0] p-6 md:p-8"
+          className="mt-8 scroll-mt-6 rounded-[28px] border border-[#173A2C]/15 bg-[#FBF8F0] p-6 sm:p-8"
         >
           <div className="flex flex-wrap items-center justify-between gap-4">
             <h2 className="text-2xl font-black">
@@ -239,25 +190,25 @@ export default async function MemberManager({
 
             {params.edit && (
               <Link
-                href="/admin/members"
+                href="/admin/members#member-form"
                 prefetch={false}
-                className="text-sm font-bold underline"
+                className="text-sm font-bold underline underline-offset-4"
               >
-                Cancel editing
+                Cancel editing / add new
               </Link>
             )}
           </div>
 
           {editUnavailable ? (
             <p className="mt-5" role="alert">
-              This member could not be found. Return to the member list
-              and try again.
+              This member could not be found. Return to the member
+              list and try again.
             </p>
           ) : (
             <form
               key={selected?.id ?? "new"}
               action={saveMember}
-              className="mt-6 grid gap-5 md:grid-cols-2"
+              className="mt-6 grid gap-5 sm:grid-cols-2"
             >
               <input
                 type="hidden"
@@ -319,7 +270,7 @@ export default async function MemberManager({
                   name="due_date"
                   type="date"
                   defaultValue={selected?.due_date ?? ""}
-                  className={`${inputClass} min-w-0`}
+                  className={inputClass}
                 />
               </label>
 
@@ -329,11 +280,11 @@ export default async function MemberManager({
                   name="birth_date"
                   type="date"
                   defaultValue={selected?.birth_date ?? ""}
-                  className={`${inputClass} min-w-0`}
+                  className={inputClass}
                 />
               </label>
 
-              <p className="text-sm leading-relaxed text-[#52645A] md:col-span-2">
+              <p className="text-sm leading-relaxed text-[#52645A] sm:col-span-2">
                 Dates are optional. Record only dates the member has
                 provided. When available, the actual birth date will
                 guide future session recommendations.
@@ -356,18 +307,18 @@ export default async function MemberManager({
                 It does not erase personal information.
               </p>
 
-              <div className="md:col-span-2">
+              <div className="sm:col-span-2">
                 <button
                   type="submit"
                   className="rounded-full bg-[#173A2C] px-7 py-4 text-sm font-extrabold text-[#F4F0E5] transition hover:bg-[#245540] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C96632]"
                 >
-                  {selected ? "SAVE CHANGES" : "ADD MEMBER"}
+                  {selected ? "SAVE CHANGES →" : "ADD MEMBER →"}
                 </button>
 
                 {!selected && (
                   <p className="mt-4 text-sm text-[#52645A]">
-                    Five available session entitlements will be created
-                    automatically.
+                    Five available session entitlements will be
+                    created automatically.
                   </p>
                 )}
               </div>
@@ -375,7 +326,7 @@ export default async function MemberManager({
           )}
         </section>
 
-        <section className="mt-12" aria-labelledby="member-list-heading">
+        <section className="mt-10" aria-labelledby="member-list-heading">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <h2 id="member-list-heading" className="text-2xl font-black">
               Member list ({total})
@@ -384,17 +335,17 @@ export default async function MemberManager({
             <Link
               href={`/admin/members?page=${page}`}
               prefetch={false}
-              className="text-sm font-bold underline"
+              className="rounded-full border border-[#173A2C]/25 px-5 py-3 text-sm font-bold"
             >
               Refresh list
             </Link>
           </div>
 
-          <div className="mt-6 space-y-5">
+          <div className="mt-6 space-y-4">
             {members.map((member) => (
               <article
                 key={member.id}
-                className="rounded-3xl border border-[#173A2C]/15 bg-[#FBF8F0] p-6"
+                className="rounded-[24px] border border-[#173A2C]/15 bg-[#FBF8F0] p-6"
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0">
@@ -402,12 +353,14 @@ export default async function MemberManager({
                       {member.name}
                     </h3>
 
-                    <p className="mt-2 break-words text-sm">
+                    <p className="mt-2 break-all text-sm text-[#52645A]">
                       {member.email}
                     </p>
 
                     {member.phone && (
-                      <p className="mt-1 text-sm">{member.phone}</p>
+                      <p className="mt-1 text-sm text-[#52645A]">
+                        {member.phone}
+                      </p>
                     )}
 
                     {member.location && (
@@ -418,14 +371,14 @@ export default async function MemberManager({
                   </div>
 
                   <div className="flex items-center gap-4">
-                    <span className="rounded-full bg-[#E8EBDD] px-3 py-2 text-xs font-bold capitalize">
+                    <span className="rounded-full bg-[#E8EBDD] px-4 py-2 text-xs font-bold capitalize">
                       {member.status}
                     </span>
 
                     <Link
                       href={`/admin/members?edit=${member.id}#member-form`}
                       prefetch={false}
-                      className="text-sm font-bold underline"
+                      className="text-sm font-bold underline underline-offset-4"
                     >
                       Edit
                     </Link>
@@ -452,7 +405,7 @@ export default async function MemberManager({
                     const entitlement = entitlements.find(
                       (item) =>
                         item.member_id === member.id &&
-                        item.session_number === index + 1
+                        item.session_number === index + 1,
                     );
 
                     return (
@@ -486,30 +439,34 @@ export default async function MemberManager({
 
           <nav
             aria-label="Member list pages"
-            className="mt-6 flex flex-wrap items-center gap-5 text-sm font-bold"
+            className="mt-7 flex flex-wrap items-center justify-between gap-4 text-sm font-semibold"
           >
-            {page > 1 && (
+            {page > 1 ? (
               <Link
                 href={`/admin/members?page=${page - 1}`}
                 prefetch={false}
-                className="underline"
+                className="rounded-full border border-[#173A2C]/25 px-5 py-3"
               >
                 ← Previous
               </Link>
+            ) : (
+              <span />
             )}
 
-            <p>
+            <span>
               Page {page} of {totalPages}
-            </p>
+            </span>
 
-            {page < totalPages && (
+            {page < totalPages ? (
               <Link
                 href={`/admin/members?page=${page + 1}`}
                 prefetch={false}
-                className="underline"
+                className="rounded-full border border-[#173A2C]/25 px-5 py-3"
               >
                 Next →
               </Link>
+            ) : (
+              <span />
             )}
 
             {page > totalPages && (
@@ -523,7 +480,7 @@ export default async function MemberManager({
             )}
           </nav>
         </section>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }
