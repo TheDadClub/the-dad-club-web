@@ -9,6 +9,10 @@ const sections = [
   { href: "/admin/members", label: "Members" },
   { href: "/admin/sessions", label: "Sessions" },
   { href: "/admin/bookings", label: "Bookings" },
+  {
+    href: "/admin/facilitators",
+    label: "Facilitator applications",
+  },
 ];
 
 export default function AdminNavigation() {

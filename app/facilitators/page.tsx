@@ -1,12 +1,20 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
+import FacilitatorApplicationForm from "../../components/FacilitatorApplicationForm";
+import { normaliseFacilitatorSource } from "../../lib/facilitatorApplications";
 
 export const metadata: Metadata = {
   title: "Facilitate with The Dad Club",
   description:
     "Explore paid opportunities to support first-time fathers through online and face-to-face Dad Club groups, with training and ongoing support.",
 };
+
+type SearchParams = Promise<{
+  status?: string | string[];
+  source?: string | string[];
+}>;
 
 const expectations = [
   {
@@ -31,7 +39,28 @@ const expectations = [
   },
 ];
 
-export default function FacilitatorsPage() {
+async function ApplicationSection({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const params = await searchParams;
+
+  const status =
+    typeof params.status === "string" ? params.status : undefined;
+
+  const source = normaliseFacilitatorSource(params.source);
+
+  return (
+    <FacilitatorApplicationForm status={status} source={source} />
+  );
+}
+
+export default function FacilitatorsPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#F4F0E5] text-[#173A2C]">
       <SiteHeader />
@@ -153,44 +182,18 @@ export default function FacilitatorsPage() {
 
         <section
           id="express-interest"
-          className="scroll-mt-6 bg-[#173A2C] px-5 py-16 text-[#F4F0E5] md:px-10 md:py-20"
+          className="scroll-mt-6 bg-[#E8EBDD] px-5 py-16 md:px-10 md:py-20"
         >
-          <div className="mx-auto max-w-6xl">
-            <h2 className="text-3xl font-black tracking-tight md:text-4xl">
-              Interested? Start a conversation.
-            </h2>
-
-            <p className="mt-6 max-w-3xl leading-relaxed text-[#D8E1D8]">
-              Our online application form is being prepared. In the
-              meantime, email a short introduction, your location,
-              relevant experience and whether you are interested in
-              online facilitation, face-to-face sessions or both.
-            </p>
-
-            <a
-              href="mailto:hello@thedadclub.com.au?subject=Facilitator%20expression%20of%20interest"
-              className="mt-8 inline-block rounded-full bg-[#F4F0E5] px-7 py-4 text-sm font-extrabold text-[#173A2C] transition hover:bg-[#E8EBDD] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F4F0E5]"
+          <div className="mx-auto max-w-3xl rounded-[28px] bg-[#F4F0E5] p-6 sm:p-10">
+            <Suspense
+              fallback={
+                <p role="status" className="font-bold">
+                  Loading application form…
+                </p>
+              }
             >
-              EMAIL YOUR INTEREST →
-            </a>
-
-            <p className="mt-5 break-words text-sm text-[#D8E1D8]">
-              hello@thedadclub.com.au
-            </p>
-
-            <p className="mt-5 max-w-3xl text-sm leading-relaxed text-[#D8E1D8]">
-              Please do not send bank details, identity documents,
-              screening documents or personal health information.
-              Any required documents will be requested later through
-              an appropriate secure process.
-            </p>
-
-            <a
-              href="/privacy/website"
-              className="mt-5 inline-block text-sm font-bold underline underline-offset-4"
-            >
-              Website privacy notice
-            </a>
+              <ApplicationSection searchParams={searchParams} />
+            </Suspense>
           </div>
         </section>
       </main>

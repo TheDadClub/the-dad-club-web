@@ -24,7 +24,13 @@ declare global {
   }
 }
 
-export default function Turnstile() {
+type TurnstileProps = {
+  action?: "register_interest" | "facilitator_application";
+};
+
+export default function Turnstile({
+  action = "register_interest",
+}: TurnstileProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<string | null>(null);
   const [failed, setFailed] = useState(false);
@@ -46,7 +52,7 @@ export default function Turnstile() {
         containerRef.current,
         {
           sitekey: siteKey,
-          action: "register_interest",
+          action,
           theme: "light",
           size: "flexible",
           "error-callback": () => setFailed(true),
@@ -70,7 +76,7 @@ export default function Turnstile() {
   if (!siteKey) {
     return (
       <p role="alert" className="text-sm text-[#9B3D24]">
-        Registration verification is unavailable. Please contact
+        Form verification is unavailable. Please contact
         hello@thedadclub.com.au.
       </p>
     );
@@ -98,7 +104,7 @@ export default function Turnstile() {
       <noscript>
         <p className="text-sm text-[#9B3D24]">
           Please enable JavaScript to complete the verification, or
-          email hello@thedadclub.com.au to register your interest.
+          email hello@thedadclub.com.au with your enquiry.
         </p>
       </noscript>
 
