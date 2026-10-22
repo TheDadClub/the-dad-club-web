@@ -4,7 +4,7 @@ export const sessionTypes = [
   { number: 1, title: "The Beginning", timing: "24 weeks before birth" },
   { number: 2, title: "Getting Ready", timing: "12 weeks before birth" },
   { number: 3, title: "Finding Your Feet", timing: "3 months after birth" },
-  { number: 4, title: "One Year In", timing: "12 months after birth" },
+  { number: 4, title: "Adjusting", timing: "12 months after birth" },
   { number: 5, title: "The Next Chapter", timing: "24 months after birth" },
 ] as const;
 

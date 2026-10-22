@@ -30,7 +30,7 @@ const sessions = [
   {
     number: "04",
     timing: "12 MONTHS AFTER BIRTH",
-    title: "One Year In",
+    title: "Adjusting",
     description:
       "A year of fatherhood. We explore relationships, identity, wellbeing and how life has changed since becoming a dad.",
     tag: "REFLECTING",
@@ -246,6 +246,33 @@ export default function Home() {
             <div className="mt-14">
               <AppShowcase />
             </div>
+          </div>
+        </section>
+
+        {/* FACILITATOR OPPORTUNITIES */}
+        <section className="bg-[#E8EBDD] px-5 py-16 md:px-10 md:py-20">
+          <div className="mx-auto max-w-6xl">
+            <p className="text-xs font-extrabold tracking-[0.2em] text-[#C96632]">
+              FACILITATE WITH THE DAD CLUB
+            </p>
+
+            <h2 className="mt-5 max-w-3xl text-3xl font-black leading-tight tracking-tight md:text-5xl">
+              GOOD WITH DADS? GET PAID FOR IT.
+            </h2>
+
+            <p className="mt-6 max-w-2xl text-base leading-relaxed text-[#52645A] sm:text-lg">
+              Help first-time fathers find connection and confidence.
+              Explore paid facilitation opportunities, with training and
+              support, online and face to face. You do not need to have
+              completed The Dad Club program to express interest.
+            </p>
+
+            <a
+              href="/facilitators"
+              className="mt-8 inline-block rounded-full bg-[#173A2C] px-7 py-4 text-sm font-extrabold text-[#F4F0E5] transition hover:bg-[#245540] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#173A2C]"
+            >
+              EXPLORE FACILITATOR OPPORTUNITIES →
+            </a>
           </div>
         </section>
       </main>

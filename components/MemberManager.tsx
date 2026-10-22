@@ -40,7 +40,7 @@ const sessionNames = [
   "The Beginning",
   "Getting Ready",
   "Finding Your Feet",
-  "One Year In",
+  "Adjusting",
   "The Next Chapter",
 ];
 
@@ -446,6 +446,7 @@ export default async function MemberManager({
                     {member.due_date && (
                       <p>Due date: {displayDate(member.due_date)}</p>
                     )}
+
                     {member.birth_date && (
                       <p>Birth date: {displayDate(member.birth_date)}</p>
                     )}
