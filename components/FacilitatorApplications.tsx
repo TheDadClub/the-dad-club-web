@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireAdmin } from "../lib/admin";
+import ApplicationStatusForm from "./ApplicationStatusForm";
 import {
   facilitatorApplicationStatuses,
   facilitatorDeliveryModes,
@@ -11,6 +12,9 @@ import {
 
 export type ApplicationSearchParams = Promise<{
   page?: string | string[];
+  status?: string | string[];
+  saved?: string | string[];
+  error?: string | string[];
 }>;
 
 type Application = {
@@ -30,6 +34,8 @@ type Application = {
   source: FacilitatorApplicationSource;
   status: FacilitatorApplicationStatus;
   consent_version: string;
+  reviewed_at: string | null;
+  review_version: number;
 };
 
 const pageSize = 25;
@@ -51,12 +57,29 @@ const applicationFields = [
   "source",
   "status",
   "consent_version",
+  "reviewed_at",
+  "review_version",
 ].join(",");
 
 const sourceLabels: Record<FacilitatorApplicationSource, string> = {
   website: "Website",
   app: "App",
   "app-referral": "App referral",
+};
+
+const statusStyles: Record<FacilitatorApplicationStatus, string> = {
+  new: "bg-[#E8EBDD] text-[#173A2C]",
+  reviewing: "bg-[#C96632]/15 text-[#8D3E21]",
+  contacted: "bg-[#173A2C] text-[#F4F0E5]",
+  closed: "bg-[#173A2C]/10 text-[#52645A]",
+};
+
+const errorMessages: Record<string, string> = {
+  invalid: "Please choose a valid application status and try again.",
+  stale:
+    "The application has changed, is no longer available, or already has that status. The list has been refreshed. Check its current status before trying again.",
+  save:
+    "The status could not be saved. Please refresh the list and try again.",
 };
 
 function displayDate(value: string) {
@@ -83,6 +106,22 @@ function deliveryLabel(value: string) {
   );
 }
 
+function listHref(status?: string, page = 1) {
+  const query = new URLSearchParams();
+
+  if (status) {
+    query.set("status", status);
+  }
+
+  if (page > 1) {
+    query.set("page", String(page));
+  }
+
+  const suffix = query.toString();
+
+  return `/admin/facilitators${suffix ? `?${suffix}` : ""}`;
+}
+
 export default async function FacilitatorApplications({
   searchParams,
 }: {
@@ -91,6 +130,10 @@ export default async function FacilitatorApplications({
   // Authorise before querying any application information.
   const { database } = await requireAdmin();
   const params = await searchParams;
+
+  const activeStatus = facilitatorApplicationStatuses.find(
+    (item) => item.value === params.status,
+  )?.value;
 
   const rawPage =
     typeof params.page === "string" ? params.page : "1";
@@ -106,9 +149,15 @@ export default async function FacilitatorApplications({
 
   const offset = (page - 1) * pageSize;
 
-  const { data, count, error } = await database
+  let query = database
     .from("facilitator_applications")
-    .select(applicationFields, { count: "exact" })
+    .select(applicationFields, { count: "exact" });
+
+  if (activeStatus) {
+    query = query.eq("status", activeStatus);
+  }
+
+  const { data, count, error } = await query
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .range(offset, offset + pageSize - 1);
@@ -123,6 +172,9 @@ export default async function FacilitatorApplications({
   const total = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
+  const errorCode =
+    typeof params.error === "string" ? params.error : "";
+
   return (
     <main className="mx-auto min-h-screen max-w-6xl px-5 py-10 text-[#173A2C] md:px-10">
       <h1 className="text-4xl font-black tracking-tight">
@@ -130,14 +182,81 @@ export default async function FacilitatorApplications({
       </h1>
 
       <p className="mt-4 max-w-3xl leading-relaxed text-[#52645A]">
-        Review expressions of interest from people interested in
-        supporting first-time fathers.
+        Review expressions of interest and keep track of recruitment.
       </p>
 
-      <p className="mt-4 rounded-xl bg-[#E8EBDD] p-4 text-sm leading-relaxed">
-        This view is read-only. Opening an application does not send
-        an email, approve the applicant or create a facilitator login.
-      </p>
+      <div className="mt-4 space-y-2 rounded-xl bg-[#E8EBDD] p-4 text-sm leading-relaxed">
+        <p>
+          <strong>New:</strong> awaiting review.{" "}
+          <strong>Reviewing:</strong> being assessed.{" "}
+          <strong>Contacted:</strong> you have contacted the applicant.{" "}
+          <strong>Closed:</strong> no further action planned for now.
+        </p>
+
+        <p>
+          These are internal tracking statuses. Contacted does not
+          send an email, and no status approves someone to facilitate.
+          Closed applications remain on record and can be reopened.
+        </p>
+      </div>
+
+      {params.saved === "1" && (
+        <p
+          role="status"
+          className="mt-6 rounded-xl bg-[#E8EBDD] p-4 font-bold"
+        >
+          Application status saved. It may have moved out of the
+          selected filter.
+        </p>
+      )}
+
+      {errorCode && (
+        <p
+          role="alert"
+          className="mt-6 rounded-xl bg-[#C96632]/10 p-4 text-sm leading-relaxed"
+        >
+          {errorMessages[errorCode] ??
+            "Something went wrong. Refresh the list and try again."}
+        </p>
+      )}
+
+      <nav
+        aria-label="Filter applications by status"
+        className="mt-8 flex flex-wrap gap-2"
+      >
+        <Link
+          href="/admin/facilitators"
+          prefetch={false}
+          aria-current={!activeStatus ? "page" : undefined}
+          className={`rounded-full px-5 py-3 text-sm font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C96632] ${
+            !activeStatus
+              ? "bg-[#173A2C] text-[#F4F0E5]"
+              : "bg-[#E8EBDD] hover:bg-[#173A2C]/10"
+          }`}
+        >
+          All
+        </Link>
+
+        {facilitatorApplicationStatuses.map((item) => {
+          const active = activeStatus === item.value;
+
+          return (
+            <Link
+              key={item.value}
+              href={listHref(item.value)}
+              prefetch={false}
+              aria-current={active ? "page" : undefined}
+              className={`rounded-full px-5 py-3 text-sm font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C96632] ${
+                active
+                  ? "bg-[#173A2C] text-[#F4F0E5]"
+                  : "bg-[#E8EBDD] hover:bg-[#173A2C]/10"
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
 
       <section
         className="mt-8"
@@ -148,11 +267,14 @@ export default async function FacilitatorApplications({
             id="application-list-heading"
             className="text-2xl font-black"
           >
-            Applications ({total})
+            {activeStatus
+              ? `${statusLabel(activeStatus)} applications`
+              : "All applications"}{" "}
+            ({total})
           </h2>
 
           <Link
-            href={`/admin/facilitators?page=${page}`}
+            href={listHref(activeStatus, page)}
             prefetch={false}
             className="rounded-full border border-[#173A2C]/25 px-5 py-3 text-sm font-bold"
           >
@@ -190,12 +312,17 @@ export default async function FacilitatorApplications({
                 </div>
 
                 <div className="space-y-3">
-                  <span className="inline-block rounded-full bg-[#E8EBDD] px-4 py-2 text-xs font-bold">
+                  <span
+                    className={`inline-block rounded-full px-4 py-2 text-xs font-bold ${
+                      statusStyles[application.status] ??
+                      "bg-[#E8EBDD] text-[#173A2C]"
+                    }`}
+                  >
                     {statusLabel(application.status)}
                   </span>
 
                   <p className="text-xs text-[#52645A]">
-                    {displayDate(application.created_at)}
+                    Applied {displayDate(application.created_at)}
                   </p>
                 </div>
               </div>
@@ -224,6 +351,22 @@ export default async function FacilitatorApplications({
                   </dd>
                 </div>
               </dl>
+
+              <ApplicationStatusForm
+                key={`${application.id}:${application.review_version}`}
+                applicationId={application.id}
+                currentStatus={application.status}
+                reviewVersion={application.review_version}
+                filter={activeStatus ?? "all"}
+                page={page}
+              />
+
+              {application.reviewed_at && (
+                <p className="mt-3 text-xs text-[#52645A]">
+                  Last status change:{" "}
+                  {displayDate(application.reviewed_at)}
+                </p>
+              )}
 
               <details className="mt-6 border-t border-[#173A2C]/15 pt-5">
                 <summary className="cursor-pointer text-sm font-bold">
@@ -254,9 +397,11 @@ export default async function FacilitatorApplications({
 
           {applications.length === 0 && (
             <p className="rounded-2xl bg-[#E8EBDD] p-6">
-              {total === 0
-                ? "No applications yet. New submissions will appear here."
-                : "No applications on this page."}
+              {page > 1
+                ? "No applications on this page. Return to the first page."
+                : activeStatus
+                  ? "No applications currently match this status."
+                  : "No applications yet. New submissions will appear here."}
             </p>
           )}
         </div>
@@ -267,7 +412,7 @@ export default async function FacilitatorApplications({
         >
           {page > 1 ? (
             <Link
-              href={`/admin/facilitators?page=${page - 1}`}
+              href={listHref(activeStatus, page - 1)}
               prefetch={false}
               className="rounded-full border border-[#173A2C]/25 px-5 py-3"
             >
@@ -283,7 +428,7 @@ export default async function FacilitatorApplications({
 
           {page < totalPages ? (
             <Link
-              href={`/admin/facilitators?page=${page + 1}`}
+              href={listHref(activeStatus, page + 1)}
               prefetch={false}
               className="rounded-full border border-[#173A2C]/25 px-5 py-3"
             >
@@ -295,7 +440,7 @@ export default async function FacilitatorApplications({
 
           {page > totalPages && (
             <Link
-              href="/admin/facilitators"
+              href={listHref(activeStatus)}
               prefetch={false}
               className="underline underline-offset-4"
             >
