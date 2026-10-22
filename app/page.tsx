@@ -1,49 +1,7 @@
 import SiteHeader from "../components/SiteHeader";
 import SiteFooter from "../components/SiteFooter";
 import AppShowcase from "../components/AppShowcase";
-
-const sessions = [
-  {
-    number: "01",
-    timing: "24 WEEKS BEFORE BIRTH",
-    title: "The Beginning",
-    description:
-      "Fatherhood starts before your baby arrives. An opportunity to connect with other dads, explore expectations and start preparing for the changes ahead.",
-    tag: "PREPARING",
-  },
-  {
-    number: "02",
-    timing: "12 WEEKS BEFORE BIRTH",
-    title: "Getting Ready",
-    description:
-      "Birth is getting closer. We explore supporting your partner, preparing for the early days and what it means to become a dad.",
-    tag: "ANTICIPATING",
-  },
-  {
-    number: "03",
-    timing: "3 MONTHS AFTER BIRTH",
-    title: "Finding Your Feet",
-    description:
-      "You've made it through the newborn stage. Let's talk about what's changed, what's been harder than expected and how you're finding your feet.",
-    tag: "ADJUSTING",
-  },
-  {
-    number: "04",
-    timing: "12 MONTHS AFTER BIRTH",
-    title: "Adjusting",
-    description:
-      "A year of fatherhood. We explore relationships, identity, wellbeing and how life has changed since becoming a dad.",
-    tag: "REFLECTING",
-  },
-  {
-    number: "05",
-    timing: "24 MONTHS AFTER BIRTH",
-    title: "The Next Chapter",
-    description:
-      "Two years in, and the journey is only beginning. A chance to reflect, reconnect and look ahead to the next stage of fatherhood.",
-    tag: "GROWING",
-  },
-];
+import ProgramTimeline from "../components/ProgramTimeline";
 
 export default function Home() {
   return (
@@ -142,85 +100,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* FIVE SESSION PROGRAM */}
-        <section
-          id="program"
-          className="mx-auto max-w-7xl px-5 py-20 md:px-10 md:py-28"
-        >
-          <p className="mb-5 text-xs font-extrabold tracking-[0.2em] text-[#C96632] sm:text-sm">
-            THE DAD CLUB PROGRAM
-          </p>
-
-          <h2 className="max-w-3xl text-4xl font-black leading-[1.08] tracking-tight md:text-6xl">
-            FIVE SESSIONS.
-            <br />
-            ONE BIG JOURNEY.
-          </h2>
-
-          <p className="mt-7 max-w-2xl text-base leading-relaxed text-[#52645A] sm:text-lg">
-            From six months before birth to your child&apos;s second
-            birthday, The Dad Club brings fathers together at five key
-            moments. Each session offers an opportunity to connect,
-            share experiences and prepare for what&apos;s next.
-          </p>
-
-          <div className="relative mt-16">
-            <div className="absolute bottom-8 left-6 top-8 w-[2px] bg-[#173A2C]/15 md:left-10" />
-
-            <div className="space-y-6">
-              {sessions.map((session) => (
-                <div
-                  key={session.number}
-                  className="relative grid grid-cols-[48px_1fr] gap-5 md:grid-cols-[80px_1fr] md:gap-8"
-                >
-                  <div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-[#173A2C] text-sm font-black text-[#F4F0E5] md:h-20 md:w-20 md:text-xl">
-                    {session.number}
-                  </div>
-
-                  <div className="rounded-[28px] border border-[#173A2C]/10 bg-[#FBF8F0] p-6 transition hover:border-[#C96632]/50 md:p-10">
-                    <div className="flex flex-wrap items-center justify-between gap-4">
-                      <p className="text-xs font-extrabold tracking-[0.14em] text-[#C96632] sm:text-sm">
-                        {session.timing}
-                      </p>
-
-                      <span className="rounded-full bg-[#E8EBDD] px-4 py-2 text-[10px] font-extrabold tracking-[0.1em] text-[#173A2C]">
-                        {session.tag}
-                      </span>
-                    </div>
-
-                    <h3 className="mt-5 text-2xl font-black tracking-tight md:text-4xl">
-                      {session.title}
-                    </h3>
-
-                    <p className="mt-5 max-w-2xl text-base leading-relaxed text-[#52645A] md:text-lg">
-                      {session.description}
-                    </p>
-
-                    <p className="mt-8 text-xs font-extrabold tracking-wide text-[#173A2C]">
-                      SESSION {session.number} →
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-14 rounded-[28px] bg-[#E8EBDD] p-8 md:p-12">
-            <p className="text-xs font-extrabold tracking-[0.2em] text-[#C96632]">
-              MORE THAN JUST FIVE SESSIONS
-            </p>
-
-            <h3 className="mt-5 max-w-2xl text-3xl font-black leading-tight md:text-4xl">
-              A community that grows with you.
-            </h3>
-
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-[#52645A] md:text-lg">
-              The sessions are milestones, not the whole story. The Dad
-              Club is about building connections and giving dads a
-              place to return to as fatherhood changes.
-            </p>
-          </div>
-        </section>
+        <ProgramTimeline />
 
         {/* APP SHOWCASE */}
         <section
