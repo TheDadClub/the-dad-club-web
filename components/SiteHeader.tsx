@@ -3,7 +3,7 @@ import Link from "next/link";
 const links = [
   { href: "/#about", label: "ABOUT" },
   { href: "/#program", label: "THE PROGRAM" },
-  { href: "/#app", label: "THE APP" },
+  { href: "/app", label: "THE APP" },
   { href: "/faq", label: "FAQs" },
   { href: "mailto:hello@thedadclub.com.au", label: "CONTACT" },
 ];
