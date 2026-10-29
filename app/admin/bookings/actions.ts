@@ -1,8 +1,10 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "../../../lib/admin";
+import { sendBookingConfirmation } from "../../../lib/sendBookingConfirmation";
 
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -45,10 +47,12 @@ export async function createBooking(formData: FormData) {
     fail("invalid");
   }
 
+  const bookingId = randomUUID();
   let errorCode: string | null = null;
 
   try {
     const { error } = await database.from("session_bookings").insert({
+      id: bookingId,
       member_id: memberId,
       session_id: sessionId,
       // The database replaces this with the selected session's type.
@@ -75,8 +79,22 @@ export async function createBooking(formData: FormData) {
     fail(errorCode);
   }
 
+  // The booking has been saved. Email failure must not undo it.
+  let emailOutcome = "not_confirmed";
+
+  try {
+    emailOutcome = await sendBookingConfirmation(database, bookingId);
+  } catch {
+    console.error(
+      "Booking saved; confirmation email outcome unavailable.",
+    );
+  }
+
   refreshAdmin();
-  redirect("/admin/bookings?saved=created");
+
+  redirect(
+    `/admin/bookings?saved=created&email=${encodeURIComponent(emailOutcome)}`,
+  );
 }
 
 export async function updateBooking(formData: FormData) {

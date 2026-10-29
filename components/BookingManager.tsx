@@ -8,11 +8,13 @@ import {
   displaySessionDate,
   sessionTitle,
 } from "../lib/programSessions";
+import BookingEmailStatus from "./BookingEmailStatus";
 
 export type BookingSearchParams = {
   page?: string | string[];
   error?: string | string[];
   saved?: string | string[];
+  email?: string | string[];
 };
 
 type Member = {
@@ -40,6 +42,12 @@ type Booking = {
   created_at: string;
   attended_at: string | null;
   cancelled_at: string | null;
+};
+
+type ConfirmationEmail = {
+  booking_id: string;
+  status: string;
+  accepted_at: string | null;
 };
 
 const pageSize = 25;
@@ -72,6 +80,15 @@ const successMessages: Record<string, string> = {
   attended: "Attendance recorded. The matching entitlement is now used.",
 };
 
+const emailMessages: Record<string, string> = {
+  accepted:
+    "Resend accepted the booking confirmation email. This does not confirm inbox delivery.",
+  not_confirmed:
+    "The booking is saved, but email acceptance could not be confirmed. Check Resend before considering another send.",
+  skipped:
+    "The booking was saved, but the confirmation was not sent because the booking, member or session was no longer eligible when checked.",
+};
+
 const statusLabels = {
   booked: "Booked",
   attended: "Attended",
@@ -93,6 +110,7 @@ export default async function BookingManager({
 }: {
   searchParams: Promise<BookingSearchParams>;
 }) {
+  // Authorise before loading member, booking or email information.
   const { database } = await requireAdmin();
   const params = await searchParams;
 
@@ -107,34 +125,35 @@ export default async function BookingManager({
   const offset = (page - 1) * pageSize;
   const now = new Date().toISOString();
 
-  const [membersResult, sessionsResult, bookingsResult] = await Promise.all([
-    database
-      .from("members")
-      .select("id,name,email", { count: "exact" })
-      .eq("status", "active")
-      .order("name")
-      .order("id")
-      .limit(200),
+  const [membersResult, sessionsResult, bookingsResult] =
+    await Promise.all([
+      database
+        .from("members")
+        .select("id,name,email", { count: "exact" })
+        .eq("status", "active")
+        .order("name")
+        .order("id")
+        .limit(200),
 
-    database
-      .from("program_sessions")
-      .select(sessionFields, { count: "exact" })
-      .eq("status", "published")
-      .gt("starts_at", now)
-      .order("starts_at")
-      .order("id")
-      .limit(100),
+      database
+        .from("program_sessions")
+        .select(sessionFields, { count: "exact" })
+        .eq("status", "published")
+        .gt("starts_at", now)
+        .order("starts_at")
+        .order("id")
+        .limit(100),
 
-    database
-      .from("session_bookings")
-      .select(
-        "id,member_id,session_id,session_number,status,created_at,attended_at,cancelled_at",
-        { count: "exact" },
-      )
-      .order("created_at", { ascending: false })
-      .order("id", { ascending: false })
-      .range(offset, offset + pageSize - 1),
-  ]);
+      database
+        .from("session_bookings")
+        .select(
+          "id,member_id,session_id,session_number,status,created_at,attended_at,cancelled_at",
+          { count: "exact" },
+        )
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .range(offset, offset + pageSize - 1),
+    ]);
 
   if (
     membersResult.error ||
@@ -156,7 +175,37 @@ export default async function BookingManager({
     sessions.map((session) => [session.id, session]),
   );
 
-  // Load any older sessions or archived members referenced on this page.
+  const emailLookup = new Map<string, ConfirmationEmail>();
+  let emailTrackingAvailable = true;
+
+  if (bookings.length > 0) {
+    try {
+      const { data, error } = await database
+        .from("booking_confirmation_emails")
+        .select("booking_id,status,accepted_at")
+        .in(
+          "booking_id",
+          bookings.map((booking) => booking.id),
+        );
+
+      if (error) {
+        emailTrackingAvailable = false;
+        console.error(
+          "Booking email tracking could not be loaded:",
+          error.code,
+        );
+      } else {
+        for (const email of (data ?? []) as ConfirmationEmail[]) {
+          emailLookup.set(email.booking_id, email);
+        }
+      }
+    } catch {
+      emailTrackingAvailable = false;
+      console.error("Booking email tracking request failed.");
+    }
+  }
+
+  // Load older sessions and archived members referenced on this page.
   const missingMemberIds = [
     ...new Set(
       bookings
@@ -209,6 +258,7 @@ export default async function BookingManager({
 
   const errorCode = scalar(params.error);
   const savedCode = scalar(params.saved);
+  const emailCode = scalar(params.email);
 
   return (
     <div className="min-h-screen bg-[#F4F0E5] text-[#173A2C]">
@@ -222,16 +272,38 @@ export default async function BookingManager({
           attendance. Dates and times use Adelaide time.
         </p>
 
-        <p className="mt-4 rounded-xl bg-[#E8EBDD] p-4 text-sm leading-relaxed">
-          A booking reserves a session entitlement. Attendance marks
-          it used. Cancelling a booking releases the place and allows
-          the available entitlement to be booked again. No emails or
-          payments are triggered here.
-        </p>
+        <div className="mt-4 space-y-3 rounded-xl bg-[#E8EBDD] p-4 text-sm leading-relaxed">
+          <p>
+            A booking reserves a session entitlement. Attendance marks
+            it used. Cancelling releases the place and allows the
+            available entitlement to be booked again.
+          </p>
+
+          <p>
+            <strong>Creating a booking now sends a confirmation email</strong>{" "}
+            to the member&apos;s recorded email address. Check the
+            member and session before saving.
+          </p>
+
+          <p>
+            Cancellation and attendance changes do not send emails yet.
+            No payments are taken here. Later changes to session details
+            do not automatically send an updated confirmation.
+          </p>
+        </div>
 
         {successMessages[savedCode] && (
           <p role="status" className="mt-6 font-bold">
             {successMessages[savedCode]}
+          </p>
+        )}
+
+        {savedCode === "created" && emailMessages[emailCode] && (
+          <p
+            role="status"
+            className="mt-3 rounded-xl bg-[#E8EBDD] p-4 text-sm leading-relaxed"
+          >
+            {emailMessages[emailCode]}
           </p>
         )}
 
@@ -242,6 +314,16 @@ export default async function BookingManager({
           >
             {errorMessages[errorCode] ??
               "The change could not be saved. Please try again."}
+          </p>
+        )}
+
+        {!emailTrackingAvailable && (
+          <p
+            role="alert"
+            className="mt-6 rounded-xl bg-[#C96632]/10 p-4 text-sm"
+          >
+            Booking confirmation email statuses could not be loaded.
+            Check Resend before considering another send.
           </p>
         )}
 
@@ -305,6 +387,8 @@ export default async function BookingManager({
             <p className="text-sm leading-relaxed text-[#52645A]">
               Capacity and entitlement availability are checked when
               you save. Full sessions may still appear in this list.
+              A successful new booking triggers one confirmation-email
+              attempt.
             </p>
 
             {(membersResult.count ?? 0) > 200 && (
@@ -326,7 +410,7 @@ export default async function BookingManager({
               disabled={!canBook}
               className="rounded-full bg-[#173A2C] px-7 py-4 text-sm font-extrabold text-[#F4F0E5] transition hover:bg-[#245540] disabled:cursor-not-allowed disabled:opacity-40"
             >
-              CREATE BOOKING →
+              CREATE BOOKING & SEND CONFIRMATION →
             </button>
           </form>
         </section>
@@ -360,6 +444,7 @@ export default async function BookingManager({
             {bookings.map((booking) => {
               const member = memberLookup.get(booking.member_id);
               const session = sessionLookup.get(booking.session_id);
+              const email = emailLookup.get(booking.id);
 
               const attendanceOpen =
                 session?.status === "published" &&
@@ -421,6 +506,15 @@ export default async function BookingManager({
                       </dd>
                     </div>
                   </dl>
+
+                  <BookingEmailStatus
+                    status={
+                      emailTrackingAvailable
+                        ? email?.status ?? "not_recorded"
+                        : "unavailable"
+                    }
+                    acceptedAt={email?.accepted_at ?? null}
+                  />
 
                   {booking.status === "booked" && (
                     <div className="mt-6 border-t border-[#173A2C]/10 pt-5">
