@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import {
@@ -7,6 +8,7 @@ import {
   facilitatorExperienceFields,
   normaliseFacilitatorSource,
 } from "../../../lib/facilitatorApplications";
+import { sendFacilitatorConfirmation } from "../../../lib/sendFacilitatorConfirmation";
 
 type FormStatus = "success" | "invalid" | "verification" | "error";
 
@@ -220,6 +222,9 @@ export async function POST(request: NextRequest) {
     return redirectToForm(request, "verification", source);
   }
 
+  const applicationId = randomUUID();
+
+  // Save the application before attempting to send email.
   try {
     const database = createClient(supabaseUrl, supabaseSecret, {
       auth: {
@@ -232,6 +237,7 @@ export async function POST(request: NextRequest) {
     const { error } = await database
       .from("facilitator_applications")
       .insert({
+        id: applicationId,
         name: values.name,
         email: values.email,
         phone: values.phone,
@@ -250,8 +256,8 @@ export async function POST(request: NextRequest) {
       });
 
     if (error?.code === "23505") {
-      // Preserve the existing application and avoid revealing
-      // whether a particular email address has already applied.
+      // Preserve the existing application. Do not send another
+      // acknowledgement or reveal whether this email has applied.
       return redirectToForm(request, "success", source);
     }
 
@@ -269,6 +275,19 @@ export async function POST(request: NextRequest) {
     );
 
     return redirectToForm(request, "error", source);
+  }
+
+  const emailAccepted = await sendFacilitatorConfirmation({
+    applicationId,
+    email: values.email,
+  });
+
+  if (!emailAccepted) {
+    // The application remains saved. Do not ask the applicant
+    // to submit again because email sending was not confirmed.
+    console.error(
+      "Facilitator application saved; confirmation email acceptance not confirmed.",
+    );
   }
 
   return redirectToForm(request, "success", source);

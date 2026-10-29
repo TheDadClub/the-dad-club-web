@@ -23,11 +23,11 @@ const sections = [
     paragraphs: [
       "When you express interest in facilitation, we collect your name, email address, phone number, location, preferred delivery modes, general availability, relevant experience and motivation. You can also provide preferred service areas and a summary of qualifications or training.",
       "We record an application identifier, submission time, your agreement to recruitment contact, the consent wording version and an application review status.",
-      "We use application information to assess suitability, manage recruitment and contact you about your application. This consent does not subscribe you to general program marketing.",
+      "We use application information to assess suitability, manage recruitment, send an acknowledgement and contact you about your application. This consent does not subscribe you to general program marketing.",
       "The initial form does not request bank details, identity documents, screening documents or personal health information. Please do not include these in your answers. If further information is needed, we will explain the purpose and appropriate collection process separately.",
       "Submitting an application does not create a facilitator account, approve you to deliver sessions or guarantee employment or work.",
-      "We keep one initial application per email address. A repeat submission does not overwrite the existing application. Contact us to update your information.",
-      "This application workflow displays an on-page acknowledgement. It does not currently send an automated application confirmation email.",
+      "We keep one initial application per email address. A repeat submission does not overwrite the existing application or trigger another automated acknowledgement email. Contact us to update your information.",
+      "After saving a new application, we attempt to send an automated acknowledgement to the email address provided. The application remains saved if email sending fails. An on-page acknowledgement does not guarantee email delivery.",
     ],
   },
   {
@@ -54,7 +54,7 @@ const sections = [
       "Vercel hosts the website and runs server code that processes submissions and private administration. Form submissions pass through Vercel before reaching our database.",
       "Supabase stores registration, application and administration information in a database configured in the Sydney region. Supabase Authentication supports administrator sign-in.",
       "Cloudflare Turnstile provides automated-submission checks. Your browser connects to Cloudflare, which processes technical signals used for verification. Our server sends the verification token to Cloudflare without adding the personal details entered in the form.",
-      "Resend sends program interest-registration confirmation emails. Our current integration provides your email address, the confirmation message and a technical registration identifier. It does not include your name, location, stage of fatherhood or optional message in the email request. Facilitator application answers are not sent to Resend by the current application workflow.",
+      "Resend sends program interest-registration confirmations and facilitator application acknowledgements. Our current integrations provide the recipient's email address, the email content and a technical registration or application identifier used to help prevent duplicate sending. The email requests do not include your name, phone number, location, stage of fatherhood, optional enquiry message or facilitator application answers.",
       "Microsoft 365 handles messages sent to and from hello@thedadclub.com.au, including replies to confirmation emails and recruitment correspondence.",
     ],
   },
@@ -81,8 +81,8 @@ const sections = [
       "We have not added advertising trackers or audience analytics to the current website. Hosting and security services may use browser storage or similar technical mechanisms needed to operate and protect the service. Administrator sign-in uses authentication cookies.",
       "Facilitator links may include a general source label, such as 'app' or 'app-referral'. If you submit an application, we may store that label with it to understand how applicants found us. It is an indicative source label, not a verified referral.",
       "These source labels do not identify the person who shared a link or recruitment image. The form does not request contact details for someone you wish to refer. Technical request logs may still include the requested URL.",
-      "Open and click tracking have not been enabled for our Resend confirmation emails. We do not use those confirmations to measure whether you opened the message or clicked a link.",
-      "Email delivery information, such as acceptance, delivery, delay, bounce or complaint events, may still be processed. A database status of 'sent' means the email provider accepted the message, not that it necessarily reached your inbox.",
+      "Open and click tracking have not been enabled for our Resend confirmation and acknowledgement emails. We do not use those emails to measure whether you opened the message or clicked a link.",
+      "Email delivery information, such as acceptance, delivery, delay, bounce or complaint events, may still be processed. An interest-registration database status of 'sent' means the email provider accepted the message, not that it necessarily reached your inbox. Facilitator acknowledgement email status is not currently recorded in the application dashboard.",
     ],
   },
   {
@@ -130,7 +130,7 @@ const sections = [
   {
     title: "Changes to this notice",
     paragraphs: [
-      "This version was prepared on 22 October 2026 to cover facilitator expressions of interest and private program administration.",
+      "This version was updated on 29 October 2026 to cover automated facilitator application acknowledgement emails.",
       "We will update this notice when our services, operator or information-handling practices change.",
     ],
   },
