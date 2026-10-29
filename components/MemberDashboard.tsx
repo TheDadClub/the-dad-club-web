@@ -9,6 +9,7 @@ import { bookMemberSession } from "../app/members/booking-actions";
 import { changeMemberWaitlist } from "../app/members/waitlist-actions";
 import MemberBookButton from "./MemberBookButton";
 import MemberWaitlistButton from "./MemberWaitlistButton";
+import MemberWaitlistInformation from "./MemberWaitlistInformation";
 
 export type MemberSearchParams = Promise<{
   booking?: string | string[];
@@ -86,14 +87,12 @@ function SessionDetails({ session }: { session: Session }) {
           {displaySessionDate(session.starts_at)}
         </dd>
       </div>
-
       <div>
         <dt className="font-bold">Ends</dt>
         <dd className="mt-1 text-[#52645A]">
           {displaySessionDate(session.ends_at)}
         </dd>
       </div>
-
       <div>
         <dt className="font-bold">Venue / delivery</dt>
         <dd className="mt-1 whitespace-pre-wrap break-words text-[#52645A]">
@@ -189,7 +188,6 @@ export default async function MemberDashboard({
 
   const entitlements =
     (entitlementResult.data ?? []) as Entitlement[];
-
   const bookings = (bookingResult.data ?? []) as Booking[];
   const upcomingSessions = (sessionResult.data ?? []) as Session[];
   const waitlist = (waitlistResult.data ?? []) as WaitlistEntry[];
@@ -224,8 +222,6 @@ export default async function MemberDashboard({
     }
   }
 
-  // Include future published dates already waitlisted by this
-  // member, even when outside the next 50 general dates.
   const selectableSessions = [...sessionMap.values()]
     .filter(
       (session) =>
@@ -237,8 +233,7 @@ export default async function MemberDashboard({
         Date.parse(first.starts_at) - Date.parse(second.starts_at),
     );
 
-  // Only aggregate counts are requested; other members' details
-  // are never loaded into this member page.
+  // Request aggregate counts without loading other members' details.
   const capacityResults = await Promise.all(
     selectableSessions.map(async (session) => {
       const { count, error } = await database
@@ -265,8 +260,7 @@ export default async function MemberDashboard({
   );
 
   const errorMessage = errorMessages[scalar(params.error)];
-  const waitlistError =
-    waitlistErrors[scalar(params.waitlistError)];
+  const waitlistError = waitlistErrors[scalar(params.waitlistError)];
 
   const inactiveWaitlist = waitlist.filter((entry) => {
     const session = sessionMap.get(entry.session_id);
@@ -288,7 +282,6 @@ export default async function MemberDashboard({
 
           <div className="flex flex-wrap items-center gap-5 text-sm font-bold">
             <Link href="/app">The app</Link>
-
             <form action={memberSignOut}>
               <button
                 type="submit"
@@ -324,7 +317,6 @@ export default async function MemberDashboard({
         <section id="sessions" className="mt-10 scroll-mt-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <h2 className="text-2xl font-black">Your sessions</h2>
-
             <Link
               href="/members"
               prefetch={false}
@@ -334,13 +326,7 @@ export default async function MemberDashboard({
             </Link>
           </div>
 
-          <p className="mt-4 max-w-3xl text-sm leading-relaxed text-[#52645A]">
-            An available entitlement means you can book that session
-            type. Each date has its own capacity. Joining a waitlist
-            does not reserve a place or use your entitlement.
-            Automatic waitlist emails are not available yet; check
-            back for openings or contact us.
-          </p>
+          <MemberWaitlistInformation />
 
           {confirmedBooking && (
             <div
@@ -391,11 +377,9 @@ export default async function MemberDashboard({
               const entitlement = entitlements.find(
                 (item) => item.session_number === type.number,
               );
-
               const booking = bookings.find(
                 (item) => item.session_number === type.number,
               );
-
               const bookedSession = booking
                 ? sessionMap.get(booking.session_id)
                 : undefined;
@@ -403,9 +387,7 @@ export default async function MemberDashboard({
               const used =
                 entitlement?.status === "used" ||
                 booking?.status === "attended";
-
               const booked = booking?.status === "booked";
-
               const canChoose =
                 entitlement?.status === "available" && !booking;
 
@@ -455,7 +437,6 @@ export default async function MemberDashboard({
                       <p className="font-bold">
                         {used ? "Session attended" : "Your booking"}
                       </p>
-
                       <SessionDetails session={bookedSession} />
 
                       {booked && bookedSession.status !== "published" && (
@@ -491,15 +472,13 @@ export default async function MemberDashboard({
                       {dates.length === 0 && (
                         <p className="rounded-2xl bg-[#E8EBDD] p-5 text-sm leading-relaxed text-[#52645A]">
                           No upcoming dates are listed for this
-                          session yet. Your entitlement remains
-                          available.
+                          session yet. Your entitlement remains available.
                         </p>
                       )}
 
                       {dates.map((session) => {
                         const places =
                           placesBySession.get(session.id) ?? 0;
-
                         const waiting =
                           waitingSessionIds.has(session.id);
 
@@ -516,7 +495,6 @@ export default async function MemberDashboard({
                                     } available`
                                   : "Currently full"}
                               </p>
-
                               {waiting && (
                                 <span className="rounded-full bg-[#C96632]/15 px-4 py-2 text-xs font-bold">
                                   Waitlisted
@@ -577,7 +555,6 @@ export default async function MemberDashboard({
               <h3 className="text-xl font-black">
                 Other waitlist entries
               </h3>
-
               <p className="mt-3 text-sm leading-relaxed text-[#52645A]">
                 These dates have started or are no longer published.
                 You can remove your waitlist entries below.
@@ -617,8 +594,7 @@ export default async function MemberDashboard({
             Showing the next 50 published dates, plus relevant
             existing bookings and up to 100 waiting entries.
             Places are checked again when you book. Booking uses
-            your existing entitlement; this page does not collect
-            payment.
+            your existing entitlement; this page does not collect payment.
           </p>
         </section>
 

@@ -5,7 +5,7 @@ const sections = [
     title: "Who we are and what this covers",
     paragraphs: [
       "The Dad Club is currently operated by Peter Mann, trading as The Dad Club, in South Australia. In this notice, 'we', 'us' and 'our' refer to that operator.",
-      "This notice covers www.thedadclub.com.au, registrations of interest, facilitator applications, member sign-in, session bookings, waitlists, related enquiries and information managed through our private administration tools. The Dad Club mobile app has a separate privacy notice.",
+      "This notice covers www.thedadclub.com.au, registrations of interest, facilitator applications, member sign-in, session bookings, waitlists, related emails and enquiries, and information managed through our private administration tools. The Dad Club mobile app has a separate privacy notice.",
       "Existing active members can sign in and book available sessions using their session entitlements. Authorised administrators manage members, session dates, entitlements, bookings, attendance and waitlist information. Online payments are not currently collected through the website.",
     ],
   },
@@ -50,7 +50,7 @@ const sections = [
       "Authorised administrators can also create bookings, cancel bookings and record attendance. Booking reserves the entitlement for that session type; attendance marks it used. Cancelling a booking releases the place and allows an otherwise available entitlement to be booked again.",
       "After a new booking is saved, the website attempts to send a confirmation email to the email address recorded on the member profile. The email includes the session title, date and times, Adelaide time-zone information, venue or delivery details, and booking reference.",
       "We record the booking confirmation sending status and, where confirmed, the time our server recorded the email provider's acceptance. A booking remains saved if email sending fails. Older bookings may not have a tracked confirmation-email outcome.",
-      "Booking confirmations are operational messages about participation. They are not receipts or proof of payment. Cancellation, attendance and later session-detail changes do not currently trigger automated emails.",
+      "Booking confirmations are operational messages about participation. They are not receipts or proof of payment. Cancellation, attendance and later session-detail changes do not currently trigger their own automated confirmation emails. A released place may trigger a separate availability alert to eligible waitlisted members.",
       "Members currently need to contact us to change or cancel a booking. The member area does not yet provide self-service cancellation or rescheduling.",
     ],
   },
@@ -58,12 +58,27 @@ const sections = [
     title: "Session waitlists",
     paragraphs: [
       "An eligible signed-in member can join the waitlist for a full, future, published session. We record the member and session identifiers, the waitlist status, joining time and last update time.",
-      "We use these records to show members their own waitlist entries and help authorised administrators understand demand for particular session dates.",
+      "We use these records to show members their own waitlist entries, help authorised administrators understand demand for particular session dates and identify members eligible for availability alerts.",
       "Joining a waitlist does not reserve a place, guarantee a booking or use an entitlement. Members can leave a waitlist. Rejoining records a new joining time rather than preserving the previous position.",
       "When a member books a session, the website marks the corresponding waiting entry as booked and closes their other waiting entries for that session type. Cancelling that booking does not automatically rejoin those waitlists.",
       "Waitlist entries may remain recorded after a session starts or is no longer published. The member area identifies those dates separately, and administrators can review the records.",
-      "Automatic waitlist emails, place offers and automatic allocation of places are not currently enabled. Members can check the website for openings or contact us. An available place is checked again when a booking is submitted.",
-      "Leaving a waitlist changes its status; it does not immediately delete the record. You can contact us to request deletion, subject to the retention considerations below.",
+      "When availability-email automation is enabled, we periodically check for places in future published sessions. An alert is eligible only while the member remains active, the waiting entry remains current, the matching entitlement is available and the member has no booking or recorded attendance for that session type.",
+      "We attempt one availability alert per waitlist joining. The alert explains that a place was available when checked and links to member sign-in. It does not allocate a place, guarantee priority or create a booking. Multiple eligible waiting members may be alerted about the same opening.",
+      "Availability may change before an alert is sent, received or acted on. Members must sign in and successfully book a place. If the session fills again, their waiting entry remains, but a successful alert is not repeatedly sent for that same joining.",
+      "The member area indicates when automatic availability emails are paused. Members can also check the website for openings or contact us. Joining a waitlist does not subscribe the member to unrelated marketing.",
+      "Leaving changes the waitlist status rather than immediately deleting its record. Sending eligibility is checked again before an alert is attempted, but an email already being processed may still arrive. You can contact us to request deletion, subject to the retention considerations below.",
+    ],
+  },
+  {
+    title: "Availability-email processing records",
+    paragraphs: [
+      "To manage availability alerts, we store a queue record linked to the waitlist entry and its joining time. It includes a notification identifier, creation and update times, processing status, attempt count and scheduling information.",
+      "Before contacting the email provider, we save the exact email request so retries can reuse it. This includes the sender and recipient email addresses, reply address, subject, message content, session dates, venue or delivery details and the member-login link.",
+      "The saved availability email does not include the member's name, phone number, due or birth dates, app check-ins or information about other members.",
+      "We also record technical processing identifiers, limited error codes and, where available, the provider's message identifier and acceptance time. Authorised administrators can see sending statuses alongside waitlist entries.",
+      "Temporary failures may be retried within a limited period. Retries use the same saved request and a technical identifier intended to prevent duplicate sending. Automatic attempts stop after the configured attempt or retry-time limit, with unresolved records marked for review.",
+      "If the recorded recipient or session details change after an email request is saved, the worker marks it for review instead of automatically retrying the outdated message.",
+      "These records help us manage operational emails and investigate delivery issues. They are separate from bookings, attendance and research participation.",
     ],
   },
   {
@@ -78,13 +93,13 @@ const sections = [
   {
     title: "Our service providers",
     paragraphs: [
-      "Vercel hosts the website and runs server code that processes submissions, member requests and private administration. Requests pass through Vercel before reaching the relevant database, authentication or email service.",
-      "Supabase stores registration, application, member, entitlement, booking, attendance and waitlist information in a database configured in the Sydney region. Supabase Authentication supports administrator and member sign-in and manages authentication accounts and sessions.",
+      "Vercel hosts the website and runs server code that processes submissions, member requests, private administration and scheduled availability-email checks. Requests pass through Vercel before reaching the relevant database, authentication or email service.",
+      "Supabase stores registration, application, member, entitlement, booking, attendance, waitlist and email-processing information in a database configured in the Sydney region. Supabase Authentication supports administrator and member sign-in and manages authentication accounts and sessions.",
       "Cloudflare Turnstile provides automated-submission checks for public forms and member login-code requests. Your browser connects to Cloudflare, which processes technical signals used for verification. Our server sends the verification token to Cloudflare without adding the personal details entered in the form.",
-      "Resend sends interest-registration confirmations, facilitator application acknowledgements and booking confirmations. Supabase Authentication also uses our Resend connection to deliver member login-code emails. Resend processes recipient email addresses, message content and technical delivery information needed to provide these services.",
+      "Resend sends interest-registration confirmations, facilitator application acknowledgements, booking confirmations and waitlist availability alerts. Supabase Authentication also uses our Resend connection to deliver member login-code emails. Resend processes recipient email addresses, message content and technical delivery information needed to provide these services.",
       "Interest-registration and facilitator acknowledgement email requests do not include names, phone numbers, locations, stages of fatherhood, optional enquiry messages or facilitator application answers. Technical registration or application identifiers help prevent duplicate sending.",
-      "Booking confirmation email requests include session and venue details and a booking reference. They do not include due or birth dates, phone numbers, app check-ins or information about other members. Login emails contain the one-time code and sign-in instructions.",
-      "Microsoft 365 handles messages sent to and from hello@thedadclub.com.au, including replies to confirmation emails, recruitment correspondence and requests for assistance.",
+      "Booking confirmations include session and venue details and a booking reference. Availability alerts include the relevant session and venue details and a member-login link. These messages do not include due or birth dates, phone numbers, app check-ins or information about other members. Login emails contain the one-time code and sign-in instructions.",
+      "Microsoft 365 handles messages sent to and from hello@thedadclub.com.au, including replies to operational emails, recruitment correspondence and requests for assistance.",
     ],
   },
   {
@@ -92,9 +107,9 @@ const sections = [
     paragraphs: [
       "Information is available to the operator and people authorised for the relevant enquiry, recruitment or program administration purpose. Facilitator applications are accessible through the website only to authorised administrators.",
       "The member area is restricted to the signed-in member's own member information, entitlements, bookings and waitlist entries. Shared session dates and aggregate place availability are displayed without revealing other members' names or booking details.",
-      "Signing in as a member does not grant administrator access or access to other members' records, interest registrations or facilitator applications.",
+      "Signing in as a member does not grant administrator access or access to other members' records, interest registrations, facilitator applications or the private email-processing queue.",
       "Service providers process information needed to deliver their services. We may also disclose information where required by law or to obtain professional assistance necessary to manage a privacy or security matter.",
-      "We do not sell this information or publish application, registration, member, booking or waitlist records on the public website.",
+      "We do not sell this information or publish application, registration, member, booking, waitlist or email-processing records on the public website.",
     ],
   },
   {
@@ -113,8 +128,9 @@ const sections = [
       "These source labels do not identify the person who shared a link or recruitment image. The form does not request contact details for someone you wish to refer. Technical request logs may still include the requested URL.",
       "We have not enabled Resend open or click tracking for our operational emails. We do not use those messages to measure whether you opened them or clicked a link.",
       "Email delivery information, such as acceptance, delivery, delay, bounce or complaint events, may still be processed by the email provider. A database status of 'sent' or 'accepted' means the provider accepted the email, not that it necessarily reached your inbox.",
-      "A status of 'not_confirmed' means our server could not confirm acceptance; a timed-out request may still have succeeded. 'Pending' means no final sending outcome has been recorded. 'Not recorded' means no tracked outcome is available, including for some older records.",
-      "A booking confirmation may be marked 'skipped' if the booking, member or session was no longer eligible when checked. Email sending statuses are separate from recruitment decisions, membership status, booking status and attendance.",
+      "For interest, facilitator and booking confirmations, 'not_confirmed' means our server could not confirm acceptance; a timed-out request may still have succeeded. 'Pending' means no final sending outcome has been recorded. 'Not recorded' means no tracked outcome is available, including for some older records.",
+      "For availability alerts, 'queued' means waiting for eligible processing and 'processing' means a worker has claimed the record. 'Accepted' means provider acceptance was recorded. 'Skipped' means the request was no longer eligible when checked. 'Review' means automatic processing has stopped and the record needs review.",
+      "A booking confirmation may also be marked 'skipped' if the booking, member or session was no longer eligible when checked. Email sending statuses are separate from recruitment decisions, membership status, booking status and attendance.",
     ],
   },
   {
@@ -122,6 +138,7 @@ const sections = [
     paragraphs: [
       "We use HTTPS for website connections, restrict database access and keep administrative credentials on the server rather than in public browser code.",
       "Private administration requires sign-in and an administrator authorisation check. Member access requires verified sign-in and a corresponding active member record. Booking and waitlist requests are checked against the authenticated member.",
+      "The scheduled email endpoint requires a private access key. Queue-processing functions and records are restricted to trusted server access. The worker rechecks member, waitlist, entitlement and session eligibility before attempting an availability email.",
       "The website uses verification checks and authentication-service limits to help protect login-code requests. Do not share your login codes or leave a session signed in on a shared device.",
       "These measures reduce risk, but no internet service or storage system can guarantee absolute security. Please do not use public forms to send confidential clinical information.",
     ],
@@ -132,7 +149,8 @@ const sections = [
       "We review interest registrations when they reach 12 months old and delete records no longer needed for their collection purpose. This is a review process, not an automatic deletion feature.",
       "We also review facilitator applications at 12 months and remove information no longer needed for recruitment. Continuing recruitment or an agreed next step may justify longer retention. Information required for any later employment or onboarding process will be addressed separately.",
       "Member, authentication, booking, attendance, entitlement and waitlist information is retained while needed to administer participation, access, remaining entitlements, relevant enquiries and operational records, and reviewed when no longer needed for those purposes.",
-      "Leaving a waitlist, cancelling a booking or signing out does not automatically delete the associated records or authentication account.",
+      "Email queue records, saved sending requests and sending outcomes are retained while needed to manage delivery, prevent duplicate processing and investigate relevant issues. They are subject to review rather than automatic deletion after sending.",
+      "Leaving a waitlist, cancelling a booking or signing out does not automatically delete the associated records, saved email requests or authentication account.",
       "Information may be retained longer where there is an ongoing enquiry or another necessary reason, including a legal obligation. We do not retain information indefinitely simply because it was collected.",
       "Email correspondence, authentication and security logs, other provider logs and backups may have separate retention periods. Deleting a database record does not instantly remove all copies from email systems or backups.",
       "You can request removal earlier. We will explain any information we need to retain and any relevant limitations.",
@@ -143,7 +161,8 @@ const sections = [
     paragraphs: [
       "You can withdraw your program interest or facilitator application, ask us to stop relevant contact, request access to your information, correct inaccurate details or request deletion by emailing hello@thedadclub.com.au.",
       "Members can view their bookings and entitlements, join eligible waitlists and leave their own waiting entries through the member area. Contact us to change member details, request a booking change or ask about account closure.",
-      "You can also reply to a program or recruitment email to explain your preferences. Operational messages needed for a requested login or booking are separate from optional program updates.",
+      "You can leave a waitlist if you no longer want an availability alert for that date. An email already being processed may still arrive. Contact us if you need help managing waiting entries or contact preferences.",
+      "You can also reply to a program or recruitment email to explain your preferences. Operational messages about a requested login, booking or waitlist are separate from optional program updates.",
       "We may need to verify your identity before providing or changing information. We will respond within a reasonable time and explain if we cannot fulfil a request.",
     ],
   },
@@ -165,7 +184,7 @@ const sections = [
   {
     title: "Changes to this notice",
     paragraphs: [
-      "This version was updated on 29 October 2026 to cover member email-code sign-in, self-service session booking, booking confirmations, session waitlists and related administration records.",
+      "This version was updated on 29 October 2026 to cover member email-code sign-in, self-service session booking, booking confirmations, session waitlists, automated availability alerts and related email-processing records.",
       "We will update this notice when our services, operator or information-handling practices change.",
     ],
   },
@@ -202,7 +221,7 @@ export default function WebsitePrivacyPage() {
   return (
     <PrivacyDocument
       title="WEBSITE PRIVACY"
-      introduction="How we handle information when you visit the website, register your interest, apply to facilitate, sign in as a member, book sessions, join waitlists or contact The Dad Club."
+      introduction="How we handle information when you visit the website, register your interest, apply to facilitate, sign in as a member, book sessions, join waitlists, receive operational emails or contact The Dad Club."
       sections={sections}
       providers={providers}
     />

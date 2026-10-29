@@ -4,6 +4,9 @@ import {
   displaySessionDate,
   sessionTitle,
 } from "../lib/programSessions";
+import WaitlistEmailStatus, {
+  type WaitlistEmailRecord,
+} from "./WaitlistEmailStatus";
 
 export type WaitlistSearchParams = {
   waitlistPage?: string | string[];
@@ -68,12 +71,15 @@ function listUrl(status: string, page = 1) {
   return `/admin/bookings?${query.toString()}`;
 }
 
+function emailKey(waitlistId: string, joinedAt: string) {
+  return `${waitlistId}|${joinedAt}`;
+}
+
 export default async function AdminWaitlist({
   searchParams,
 }: {
   searchParams: Promise<WaitlistSearchParams>;
 }) {
-  // Authorise before loading waitlist or member information.
   const { database } = await requireAdmin();
   const params = await searchParams;
 
@@ -122,6 +128,9 @@ export default async function AdminWaitlist({
 
   const members = new Map<string, Member>();
   const sessions = new Map<string, Session>();
+  const emails = new Map<string, WaitlistEmailRecord>();
+
+  let emailTrackingAvailable = true;
 
   if (entries.length > 0) {
     const memberIds = [
@@ -140,9 +149,7 @@ export default async function AdminWaitlist({
 
       database
         .from("program_sessions")
-        .select(
-          "id, session_number, starts_at, venue_name, status",
-        )
+        .select("id, session_number, starts_at, venue_name, status")
         .in("id", sessionIds),
     ]);
 
@@ -157,9 +164,49 @@ export default async function AdminWaitlist({
     for (const session of (sessionResult.data ?? []) as Session[]) {
       sessions.set(session.id, session);
     }
+
+    try {
+      // Load only status information, never saved email bodies.
+      // Match the current joining so a previous joining's email
+      // is not displayed against a rejoined entry.
+      const { data: emailData, error: emailError } = await database
+        .from("waitlist_email_queue")
+        .select(
+          "waitlist_id, waitlist_joined_at, status, accepted_at, next_attempt_at, attempts",
+        )
+        .in(
+          "waitlist_id",
+          entries.map((entry) => entry.id),
+        )
+        .in(
+          "waitlist_joined_at",
+          [...new Set(entries.map((entry) => entry.joined_at))],
+        );
+
+      if (emailError) {
+        emailTrackingAvailable = false;
+        console.error(
+          "Waitlist email statuses unavailable:",
+          emailError.code,
+        );
+      } else {
+        for (const email of
+          (emailData ?? []) as WaitlistEmailRecord[]) {
+          emails.set(
+            emailKey(email.waitlist_id, email.waitlist_joined_at),
+            email,
+          );
+        }
+      }
+    } catch {
+      emailTrackingAvailable = false;
+      console.error("Waitlist email status lookup failed.");
+    }
   }
 
   const now = Date.now();
+  const sendingEnabled =
+    process.env.WAITLIST_EMAILS_ENABLED === "true";
 
   return (
     <main className="mx-auto max-w-6xl px-5 py-10 text-[#173A2C] md:px-10">
@@ -173,21 +220,35 @@ export default async function AdminWaitlist({
       </p>
 
       <div className="mt-5 space-y-3 rounded-2xl bg-[#E8EBDD] p-5 text-sm leading-relaxed">
+        <p className="font-bold">
+          Automatic availability emails:{" "}
+          {sendingEnabled ? "enabled" : "paused"}
+        </p>
+
         <p>
-          Waitlisting does not reserve a place or use an entitlement.
+          When enabled, the scheduled worker checks every five
+          minutes and processes up to five emails per run. It sends
+          one availability alert per waitlist joining, subject to
+          eligibility and successful email processing.
+        </p>
+
+        <p>
+          Alerts do not reserve places or create bookings.
+          Members must sign in and book an available place.
+          Availability is checked again at booking.
+        </p>
+
+        <p>
           Members can leave and rejoin; rejoining records a new
-          joining time.
+          joining time. Booking a session closes their waiting
+          entries for the same session type. Cancelling that booking
+          does not automatically rejoin those waitlists.
         </p>
 
         <p>
-          Booking a session closes that member&apos;s waiting entries
-          for the same session type. Cancelling that booking does
-          not automatically rejoin those waitlists.
-        </p>
-
-        <p>
-          This view does not send emails, offer places or create
-          bookings. Automatic waitlist notifications are not enabled yet.
+          Opening or refreshing this page does not send emails.
+          Accepted for sending means Resend accepted the message,
+          not guaranteed inbox delivery.
         </p>
       </div>
 
@@ -247,6 +308,10 @@ export default async function AdminWaitlist({
             Date.parse(session.starts_at) > now;
 
           const memberActive = member?.status === "active";
+
+          const email = emails.get(
+            emailKey(entry.id, entry.joined_at),
+          );
 
           return (
             <article
@@ -310,6 +375,11 @@ export default async function AdminWaitlist({
                   </dd>
                 </div>
               </dl>
+
+              <WaitlistEmailStatus
+                email={email}
+                available={emailTrackingAvailable}
+              />
 
               {entry.status !== "waiting" && (
                 <p className="mt-4 text-xs text-[#52645A]">
