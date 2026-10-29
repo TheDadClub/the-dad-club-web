@@ -9,12 +9,14 @@ import {
   sessionTitle,
 } from "../lib/programSessions";
 import BookingEmailStatus from "./BookingEmailStatus";
+import BookingCancellationEmailStatus from "./BookingCancellationEmailStatus";
 
 export type BookingSearchParams = {
   page?: string | string[];
   error?: string | string[];
   saved?: string | string[];
   email?: string | string[];
+  cancellationEmail?: string | string[];
 };
 
 type Member = {
@@ -44,7 +46,7 @@ type Booking = {
   cancelled_at: string | null;
 };
 
-type ConfirmationEmail = {
+type TrackedEmail = {
   booking_id: string;
   status: string;
   accepted_at: string | null;
@@ -87,6 +89,15 @@ const emailMessages: Record<string, string> = {
     "The booking is saved, but email acceptance could not be confirmed. Check Resend before considering another send.",
   skipped:
     "The booking was saved, but the confirmation was not sent because the booking, member or session was no longer eligible when checked.",
+};
+
+const cancellationEmailMessages: Record<string, string> = {
+  accepted:
+    "Resend accepted the cancellation confirmation email. This does not confirm inbox delivery.",
+  not_confirmed:
+    "The cancellation is saved, but email acceptance could not be confirmed. A timed-out request may still have succeeded. Check Resend before considering another send.",
+  skipped:
+    "The cancellation was saved, but the email was skipped because the booking was no longer cancelled when checked.",
 };
 
 const statusLabels = {
@@ -175,13 +186,20 @@ export default async function BookingManager({
     sessions.map((session) => [session.id, session]),
   );
 
-  const emailLookup = new Map<string, ConfirmationEmail>();
-  let emailTrackingAvailable = true;
+  async function loadEmailTracking(
+    table:
+      | "booking_confirmation_emails"
+      | "booking_cancellation_emails",
+  ) {
+    const lookup = new Map<string, TrackedEmail>();
 
-  if (bookings.length > 0) {
+    if (bookings.length === 0) {
+      return { lookup, available: true };
+    }
+
     try {
       const { data, error } = await database
-        .from("booking_confirmation_emails")
+        .from(table)
         .select("booking_id,status,accepted_at")
         .in(
           "booking_id",
@@ -189,21 +207,31 @@ export default async function BookingManager({
         );
 
       if (error) {
-        emailTrackingAvailable = false;
         console.error(
           "Booking email tracking could not be loaded:",
+          table,
           error.code,
         );
-      } else {
-        for (const email of (data ?? []) as ConfirmationEmail[]) {
-          emailLookup.set(email.booking_id, email);
-        }
+
+        return { lookup, available: false };
       }
+
+      for (const email of (data ?? []) as TrackedEmail[]) {
+        lookup.set(email.booking_id, email);
+      }
+
+      return { lookup, available: true };
     } catch {
-      emailTrackingAvailable = false;
-      console.error("Booking email tracking request failed.");
+      console.error("Booking email tracking request failed:", table);
+      return { lookup, available: false };
     }
   }
+
+  const [confirmationTracking, cancellationTracking] =
+    await Promise.all([
+      loadEmailTracking("booking_confirmation_emails"),
+      loadEmailTracking("booking_cancellation_emails"),
+    ]);
 
   // Load older sessions and archived members referenced on this page.
   const missingMemberIds = [
@@ -259,6 +287,7 @@ export default async function BookingManager({
   const errorCode = scalar(params.error);
   const savedCode = scalar(params.saved);
   const emailCode = scalar(params.email);
+  const cancellationEmailCode = scalar(params.cancellationEmail);
 
   return (
     <div className="min-h-screen bg-[#F4F0E5] text-[#173A2C]">
@@ -280,15 +309,16 @@ export default async function BookingManager({
           </p>
 
           <p>
-            <strong>Creating a booking now sends a confirmation email</strong>{" "}
+            <strong>Creating or cancelling a booking attempts to send
+            a confirmation email</strong>{" "}
             to the member&apos;s recorded email address. Check the
             member and session before saving.
           </p>
 
           <p>
-            Cancellation and attendance changes do not send emails yet.
-            No payments are taken here. Later changes to session details
-            do not automatically send an updated confirmation.
+            Attendance changes do not send emails. No payments are
+            taken here. Later changes to session details do not
+            automatically send an updated confirmation.
           </p>
         </div>
 
@@ -307,6 +337,16 @@ export default async function BookingManager({
           </p>
         )}
 
+        {savedCode === "cancelled" &&
+          cancellationEmailMessages[cancellationEmailCode] && (
+            <p
+              role="status"
+              className="mt-3 rounded-xl bg-[#E8EBDD] p-4 text-sm leading-relaxed"
+            >
+              {cancellationEmailMessages[cancellationEmailCode]}
+            </p>
+          )}
+
         {errorCode && (
           <p
             role="alert"
@@ -317,12 +357,22 @@ export default async function BookingManager({
           </p>
         )}
 
-        {!emailTrackingAvailable && (
+        {!confirmationTracking.available && (
           <p
             role="alert"
             className="mt-6 rounded-xl bg-[#C96632]/10 p-4 text-sm"
           >
             Booking confirmation email statuses could not be loaded.
+            Check Resend before considering another send.
+          </p>
+        )}
+
+        {!cancellationTracking.available && (
+          <p
+            role="alert"
+            className="mt-6 rounded-xl bg-[#C96632]/10 p-4 text-sm"
+          >
+            Cancellation email statuses could not be loaded.
             Check Resend before considering another send.
           </p>
         )}
@@ -410,7 +460,7 @@ export default async function BookingManager({
               disabled={!canBook}
               className="rounded-full bg-[#173A2C] px-7 py-4 text-sm font-extrabold text-[#F4F0E5] transition hover:bg-[#245540] disabled:cursor-not-allowed disabled:opacity-40"
             >
-              CREATE BOOKING & SEND CONFIRMATION →
+              CREATE BOOKING &amp; SEND CONFIRMATION →
             </button>
           </form>
         </section>
@@ -444,7 +494,12 @@ export default async function BookingManager({
             {bookings.map((booking) => {
               const member = memberLookup.get(booking.member_id);
               const session = sessionLookup.get(booking.session_id);
-              const email = emailLookup.get(booking.id);
+
+              const confirmationEmail =
+                confirmationTracking.lookup.get(booking.id);
+
+              const cancellationEmail =
+                cancellationTracking.lookup.get(booking.id);
 
               const attendanceOpen =
                 session?.status === "published" &&
@@ -509,12 +564,23 @@ export default async function BookingManager({
 
                   <BookingEmailStatus
                     status={
-                      emailTrackingAvailable
-                        ? email?.status ?? "not_recorded"
+                      confirmationTracking.available
+                        ? confirmationEmail?.status ?? "not_recorded"
                         : "unavailable"
                     }
-                    acceptedAt={email?.accepted_at ?? null}
+                    acceptedAt={confirmationEmail?.accepted_at ?? null}
                   />
+
+                  {booking.status === "cancelled" && (
+                    <BookingCancellationEmailStatus
+                      status={
+                        cancellationTracking.available
+                          ? cancellationEmail?.status ?? "not_recorded"
+                          : "unavailable"
+                      }
+                      acceptedAt={cancellationEmail?.accepted_at ?? null}
+                    />
+                  )}
 
                   {booking.status === "booked" && (
                     <div className="mt-6 border-t border-[#173A2C]/10 pt-5">
@@ -554,7 +620,7 @@ export default async function BookingManager({
                             type="submit"
                             className="rounded-full border border-[#173A2C]/25 px-5 py-3 text-sm font-bold hover:bg-[#E8EBDD]"
                           >
-                            Cancel booking
+                            Cancel booking &amp; send email
                           </button>
                         </form>
                       </div>

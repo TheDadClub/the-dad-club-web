@@ -83,7 +83,7 @@ export function buildSessionReminderEmail(
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>The Dad Club — Session reminder</title>
+        <title>The Dad Club — Session Reminder</title>
       </head>
       <body style="margin:0;padding:24px 12px;background:#F4F0E5;color:#173A2C;font-family:Inter,Arial,Helvetica,sans-serif;">
         <table role="presentation" style="width:100%;max-width:600px;margin:auto;border-collapse:collapse;">
@@ -163,7 +163,7 @@ export function buildSessionReminderEmail(
     from,
     to: [details.email],
     reply_to: "hello@thedadclub.com.au",
-    subject: `The Dad Club — Session reminder: ${title}`,
+    subject: `The Dad Club — Session Reminder: ${title}`,
     text,
     html,
   };

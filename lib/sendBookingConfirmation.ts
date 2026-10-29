@@ -20,8 +20,7 @@ export async function sendBookingConfirmation(
   bookingId: string,
 ): Promise<EmailOutcome> {
   // Claim this pending email before attempting to send.
-  // An interrupted attempt remains "not_confirmed" for manual review.
-  // Calling this function again will not automatically resend it.
+  // Interrupted attempts are not automatically resent.
   try {
     const { data, error } = await database
       .from("booking_confirmation_emails")
@@ -56,7 +55,9 @@ export async function sendBookingConfirmation(
         .update({
           status,
           accepted_at:
-            status === "accepted" ? new Date().toISOString() : null,
+            status === "accepted"
+              ? new Date().toISOString()
+              : null,
         })
         .eq("booking_id", bookingId)
         .eq("status", "not_confirmed")
@@ -205,7 +206,7 @@ export async function sendBookingConfirmation(
         <head>
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <title>The Dad Club — Booking confirmed</title>
+          <title>The Dad Club — Booking Confirmed</title>
         </head>
         <body style="margin:0;padding:24px 12px;background:#F4F0E5;color:#173A2C;font-family:Inter,Arial,Helvetica,sans-serif;">
           <table role="presentation" style="width:100%;max-width:600px;margin:0 auto;border-collapse:collapse;">
@@ -229,20 +230,16 @@ export async function sendBookingConfirmation(
                 </p>
 
                 <table role="presentation" style="width:100%;margin:24px 0;border-collapse:collapse;background:#E8EBDD;">
-                  ${details
-                    .map(
-                      ([label, value]) => `
-                        <tr>
-                          <td style="padding:12px 16px;font-size:14px;line-height:1.6;vertical-align:top;font-weight:bold;">
-                            ${escapeHtml(label)}
-                          </td>
-                          <td style="padding:12px 16px;font-size:14px;line-height:1.6;vertical-align:top;overflow-wrap:anywhere;word-break:break-word;">
-                            ${escapeHtml(value)}
-                          </td>
-                        </tr>
-                      `,
-                    )
-                    .join("")}
+                  ${details.map(([label, value]) => `
+                    <tr>
+                      <td style="padding:12px 16px;font-size:14px;line-height:1.6;vertical-align:top;font-weight:bold;">
+                        ${escapeHtml(label)}
+                      </td>
+                      <td style="padding:12px 16px;font-size:14px;line-height:1.6;vertical-align:top;overflow-wrap:anywhere;word-break:break-word;">
+                        ${escapeHtml(value)}
+                      </td>
+                    </tr>
+                  `).join("")}
                 </table>
 
                 <p style="font-size:16px;line-height:1.7;">
@@ -283,11 +280,12 @@ export async function sendBookingConfirmation(
     `;
 
     // Check again immediately before the sending request.
-    const { data: currentBooking, error: currentError } = await database
-      .from("session_bookings")
-      .select("status")
-      .eq("id", bookingId)
-      .maybeSingle();
+    const { data: currentBooking, error: currentError } =
+      await database
+        .from("session_bookings")
+        .select("status")
+        .eq("id", bookingId)
+        .maybeSingle();
 
     if (currentError || !currentBooking) {
       console.error(
@@ -312,7 +310,7 @@ export async function sendBookingConfirmation(
         from,
         to: [email],
         reply_to: "hello@thedadclub.com.au",
-        subject: `The Dad Club — ${title}: booking confirmed`,
+        subject: `The Dad Club — Booking Confirmed: ${title}`,
         text,
         html,
       }),

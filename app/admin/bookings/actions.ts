@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "../../../lib/admin";
 import { sendBookingConfirmation } from "../../../lib/sendBookingConfirmation";
+import { sendBookingCancellation } from "../../../lib/sendBookingCancellation";
 
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -35,6 +36,7 @@ function refreshAdmin() {
   revalidatePath("/admin/bookings");
   revalidatePath("/admin/members");
   revalidatePath("/admin/sessions");
+  revalidatePath("/members");
 }
 
 export async function createBooking(formData: FormData) {
@@ -137,6 +139,26 @@ export async function updateBooking(formData: FormData) {
 
   if (errorCode) {
     fail(errorCode);
+  }
+
+  // Only a successfully saved cancellation sends this email.
+  // Attendance changes do not send emails.
+  if (status === "cancelled") {
+    let emailOutcome = "not_confirmed";
+
+    try {
+      emailOutcome = await sendBookingCancellation(database, id);
+    } catch {
+      console.error(
+        "Booking cancelled; cancellation email outcome unavailable.",
+      );
+    }
+
+    refreshAdmin();
+
+    redirect(
+      `/admin/bookings?saved=cancelled&cancellationEmail=${encodeURIComponent(emailOutcome)}`,
+    );
   }
 
   refreshAdmin();
