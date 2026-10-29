@@ -222,18 +222,18 @@ export async function POST(request: NextRequest) {
     return redirectToForm(request, "verification", source);
   }
 
+  const database = createClient(supabaseUrl, supabaseSecret, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  });
+
   const applicationId = randomUUID();
 
-  // Save the application before attempting to send email.
+  // Save first. Email outcomes must never discard an application.
   try {
-    const database = createClient(supabaseUrl, supabaseSecret, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-      },
-    });
-
     const { error } = await database
       .from("facilitator_applications")
       .insert({
@@ -253,11 +253,12 @@ export async function POST(request: NextRequest) {
         consent_version: facilitatorConsentVersion,
         source,
         status: "new",
+        acknowledgement_email_status: "pending",
+        acknowledgement_email_accepted_at: null,
       });
 
     if (error?.code === "23505") {
-      // Preserve the existing application. Do not send another
-      // acknowledgement or reveal whether this email has applied.
+      // Do not change existing applications or resend their email.
       return redirectToForm(request, "success", source);
     }
 
@@ -282,9 +283,40 @@ export async function POST(request: NextRequest) {
     email: values.email,
   });
 
+  // Only update email fields; recruitment review status is separate.
+  try {
+    const { data: recorded, error } = await database
+      .from("facilitator_applications")
+      .update({
+        acknowledgement_email_status: emailAccepted
+          ? "accepted"
+          : "not_confirmed",
+        acknowledgement_email_accepted_at: emailAccepted
+          ? new Date().toISOString()
+          : null,
+      })
+      .eq("id", applicationId)
+      .eq("acknowledgement_email_status", "pending")
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      console.error(
+        "Facilitator acknowledgement status update failed:",
+        error.code,
+      );
+    } else if (!recorded) {
+      console.error(
+        "Facilitator acknowledgement status: no pending application updated.",
+      );
+    }
+  } catch {
+    console.error(
+      "Facilitator acknowledgement status: database request failed.",
+    );
+  }
+
   if (!emailAccepted) {
-    // The application remains saved. Do not ask the applicant
-    // to submit again because email sending was not confirmed.
     console.error(
       "Facilitator application saved; confirmation email acceptance not confirmed.",
     );

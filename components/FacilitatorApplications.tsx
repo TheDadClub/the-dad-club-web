@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireAdmin } from "../lib/admin";
 import ApplicationStatusForm from "./ApplicationStatusForm";
+import ApplicationEmailStatus from "./ApplicationEmailStatus";
 import {
   facilitatorApplicationStatuses,
   facilitatorDeliveryModes,
@@ -36,6 +37,8 @@ type Application = {
   consent_version: string;
   reviewed_at: string | null;
   review_version: number;
+  acknowledgement_email_status: string;
+  acknowledgement_email_accepted_at: string | null;
 };
 
 const pageSize = 25;
@@ -59,6 +62,8 @@ const applicationFields = [
   "consent_version",
   "reviewed_at",
   "review_version",
+  "acknowledgement_email_status",
+  "acknowledgement_email_accepted_at",
 ].join(",");
 
 const sourceLabels: Record<FacilitatorApplicationSource, string> = {
@@ -197,6 +202,11 @@ export default async function FacilitatorApplications({
           These are internal tracking statuses. Contacted does not
           send an email, and no status approves someone to facilitate.
           Closed applications remain on record and can be reopened.
+        </p>
+
+        <p>
+          Acknowledgement email status is tracked separately.
+          Changing a recruitment status does not send or resend it.
         </p>
       </div>
 
@@ -351,6 +361,11 @@ export default async function FacilitatorApplications({
                   </dd>
                 </div>
               </dl>
+
+              <ApplicationEmailStatus
+                status={application.acknowledgement_email_status}
+                acceptedAt={application.acknowledgement_email_accepted_at}
+              />
 
               <ApplicationStatusForm
                 key={`${application.id}:${application.review_version}`}

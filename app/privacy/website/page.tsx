@@ -22,7 +22,8 @@ const sections = [
     title: "Facilitator applications",
     paragraphs: [
       "When you express interest in facilitation, we collect your name, email address, phone number, location, preferred delivery modes, general availability, relevant experience and motivation. You can also provide preferred service areas and a summary of qualifications or training.",
-      "We record an application identifier, submission time, your agreement to recruitment contact, the consent wording version and an application review status.",
+      "We record an application identifier, submission time, your agreement to recruitment contact, the consent wording version, application review information and an application review status.",
+      "For new applications, we also record the acknowledgement email sending status and, where confirmed, the time our server recorded the email provider's acceptance. These records help administrators identify sending attempts needing review.",
       "We use application information to assess suitability, manage recruitment, send an acknowledgement and contact you about your application. This consent does not subscribe you to general program marketing.",
       "The initial form does not request bank details, identity documents, screening documents or personal health information. Please do not include these in your answers. If further information is needed, we will explain the purpose and appropriate collection process separately.",
       "Submitting an application does not create a facilitator account, approve you to deliver sessions or guarantee employment or work.",
@@ -82,7 +83,8 @@ const sections = [
       "Facilitator links may include a general source label, such as 'app' or 'app-referral'. If you submit an application, we may store that label with it to understand how applicants found us. It is an indicative source label, not a verified referral.",
       "These source labels do not identify the person who shared a link or recruitment image. The form does not request contact details for someone you wish to refer. Technical request logs may still include the requested URL.",
       "Open and click tracking have not been enabled for our Resend confirmation and acknowledgement emails. We do not use those emails to measure whether you opened the message or clicked a link.",
-      "Email delivery information, such as acceptance, delivery, delay, bounce or complaint events, may still be processed. An interest-registration database status of 'sent' means the email provider accepted the message, not that it necessarily reached your inbox. Facilitator acknowledgement email status is not currently recorded in the application dashboard.",
+      "Email delivery information, such as acceptance, delivery, delay, bounce or complaint events, may still be processed by the email provider. An interest-registration database status of 'sent', or a facilitator acknowledgement status of 'accepted', means the provider accepted the email, not that it necessarily reached your inbox.",
+      "A facilitator acknowledgement status of 'not_confirmed' means our server could not confirm acceptance; a timed-out request may still have succeeded. 'Pending' means a sending attempt was started without a recorded final outcome. 'Not recorded' means no tracked outcome is available, including for older applications. These statuses are separate from recruitment review decisions.",
     ],
   },
   {
@@ -130,7 +132,7 @@ const sections = [
   {
     title: "Changes to this notice",
     paragraphs: [
-      "This version was updated on 29 October 2026 to cover automated facilitator application acknowledgement emails.",
+      "This version was updated on 29 October 2026 to cover automated facilitator application acknowledgements and administrative email sending-status records.",
       "We will update this notice when our services, operator or information-handling practices change.",
     ],
   },
