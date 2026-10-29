@@ -25,7 +25,10 @@ declare global {
 }
 
 type TurnstileProps = {
-  action?: "register_interest" | "facilitator_application";
+  action?:
+    | "register_interest"
+    | "facilitator_application"
+    | "member_login";
 };
 
 export default function Turnstile({
