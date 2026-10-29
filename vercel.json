@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/waitlist-openings",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/session-reminders",
+      "schedule": "*/5 * * * *"
     }
   ]
 }
