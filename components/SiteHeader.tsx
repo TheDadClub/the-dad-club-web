@@ -4,6 +4,7 @@ const links = [
   { href: "/#about", label: "ABOUT" },
   { href: "/#program", label: "THE PROGRAM" },
   { href: "/app", label: "THE APP" },
+  { href: "/hat", label: "THE HAT" },
   { href: "/faq", label: "FAQs" },
   { href: "mailto:hello@thedadclub.com.au", label: "CONTACT" },
 ];
@@ -23,12 +24,12 @@ export default function SiteHeader() {
           THE DAD CLUB <span className="text-[#C96632]">→</span>
         </Link>
 
-        <div className="flex items-center gap-6 text-xs font-extrabold">
+        <div className="flex items-center gap-4 text-xs font-extrabold xl:gap-6">
           {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="transition hover:text-[#C96632]"
+              className="whitespace-nowrap transition hover:text-[#C96632]"
             >
               {link.label}
             </Link>
