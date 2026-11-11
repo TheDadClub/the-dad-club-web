@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -9,6 +10,11 @@ const sections = [
   { href: "/admin/members", label: "Members" },
   { href: "/admin/sessions", label: "Sessions" },
   { href: "/admin/bookings", label: "Bookings" },
+  { href: "/admin/venues", label: "Venues" },
+  {
+    href: "/admin/healthcare",
+    label: "Healthcare Referrals",
+  },
   {
     href: "/admin/facilitators",
     label: "Facilitator applications",

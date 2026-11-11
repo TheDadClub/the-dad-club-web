@@ -1,3 +1,4 @@
+
 "use client";
 
 import Script from "next/script";
@@ -27,6 +28,7 @@ declare global {
 type TurnstileProps = {
   action?:
     | "register_interest"
+    | "venue_enquiry"
     | "facilitator_application"
     | "member_login";
 };
