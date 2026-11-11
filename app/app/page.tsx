@@ -18,12 +18,8 @@ export const metadata: Metadata = {
   },
 };
 
-// Keep released false until the app is publicly available.
-// Add the official App Store listing URL before enabling downloads.
-const appStore = {
-  released: false,
-  url: "",
-};
+const appStoreUrl =
+  "https://apps.apple.com/app/the-dad-club/id6820410310";
 
 const benefits = [
   {
@@ -76,29 +72,33 @@ const questions = [
 ];
 
 function AppAccess({ centred = false }: { centred?: boolean }) {
-  const canDownload =
-    appStore.released &&
-    appStore.url.startsWith("https://apps.apple.com/");
-
   return (
     <div className={centred ? "text-center" : ""}>
-      {canDownload ? (
+      <div
+        className={`flex flex-col gap-3 sm:flex-row sm:flex-wrap ${
+          centred ? "items-center justify-center" : "items-start"
+        }`}
+      >
         <a
-          href={appStore.url}
-          className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#173A2C] px-7 py-4 text-sm font-extrabold text-[#F4F0E5] transition hover:bg-[#245540] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C96632]"
+          href={appStoreUrl}
+          className="inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-full bg-[#173A2C] px-7 py-4 text-center text-sm font-extrabold text-[#F4F0E5] transition hover:bg-[#245540] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C96632] sm:w-auto"
         >
-          VIEW ON THE APP STORE ↗
+          DOWNLOAD ON THE APP STORE
+          <span aria-hidden="true">↗</span>
         </a>
-      ) : (
-        <p className="inline-flex min-h-12 items-center rounded-full border border-[#173A2C]/20 bg-[#E8EBDD] px-6 py-3 text-sm font-bold">
-          Coming soon to the App Store
-        </p>
-      )}
+
+        <button
+          type="button"
+          disabled
+          className="inline-flex min-h-14 w-full cursor-default items-center justify-center rounded-full border border-[#173A2C]/20 bg-[#E8EBDD] px-7 py-4 text-center text-sm font-bold text-[#52645A] sm:w-auto"
+        >
+          Coming soon to Android
+        </button>
+      </div>
 
       <p className="mt-3 text-sm leading-relaxed text-[#52645A]">
-        {canDownload
-          ? "For iPhone. Check the App Store listing for pricing and compatibility."
-          : "Our iPhone app is approved. We’re getting ready to welcome you."}
+        For iPhone. Check the App Store listing for pricing and
+        compatibility.
       </p>
     </div>
   );
@@ -157,15 +157,18 @@ export default function AppPage() {
               WELCOME TO THE CLUB →
             </p>
 
-            <div className="relative mx-auto mt-7 aspect-[832/1858] w-full max-w-[230px] overflow-hidden rounded-[24px] bg-[#F4F0E5] shadow-xl">
-              <Image
-                src="/images/dad-club-home.png"
-                alt="A preview of The Dad Club app home screen"
-                fill
-                priority
-                sizes="230px"
-                className="object-contain"
-              />
+            <div className="mx-auto mt-7 w-full max-w-[230px] rounded-[34px] border border-white/20 bg-[#10291F] p-[6px]">
+              <div className="overflow-hidden rounded-[27px] bg-[#F4F0E5]">
+                <Image
+                  src="/images/app-home.png"
+                  alt="The Dad Club app home screen showing a personalised fatherhood journey"
+                  width={946}
+                  height={2048}
+                  priority
+                  sizes="230px"
+                  className="block h-auto w-full"
+                />
+              </div>
             </div>
 
             <figcaption className="mt-7 text-center text-sm leading-relaxed text-[#D8E1D8]">
