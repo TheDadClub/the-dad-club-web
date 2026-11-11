@@ -18,6 +18,7 @@ type PrivacyDocumentProps = {
   sections: PrivacySection[];
   providers?: ProviderLink[];
   notice?: string;
+  lastUpdated?: string;
 };
 
 export default function PrivacyDocument({
@@ -26,12 +27,16 @@ export default function PrivacyDocument({
   sections,
   providers = [],
   notice,
+  lastUpdated,
 }: PrivacyDocumentProps) {
   return (
     <div className="min-h-screen bg-[#F4F0E5] text-[#173A2C]">
       <SiteHeader />
 
-      <main className="mx-auto max-w-4xl px-5 py-14 md:px-10 md:py-24">
+      <main
+        id="main-content"
+        className="mx-auto max-w-4xl px-5 py-14 md:px-10 md:py-24"
+      >
         <Link
           href="/privacy"
           className="text-sm font-bold hover:text-[#C96632]"
@@ -43,9 +48,11 @@ export default function PrivacyDocument({
           {title}
         </h1>
 
-        <p className="mt-4 text-sm text-[#52645A]">
-          Last updated: 15 October 2026
-        </p>
+        {lastUpdated && (
+          <p className="mt-4 text-sm text-[#52645A]">
+            Last updated: {lastUpdated}
+          </p>
+        )}
 
         <p className="mt-7 text-lg leading-relaxed text-[#52645A]">
           {introduction}
@@ -101,9 +108,11 @@ export default function PrivacyDocument({
 
         <section className="mt-10 border-t border-[#173A2C]/15 pt-7">
           <h2 className="text-xl font-black">Contact us</h2>
+
           <p className="mt-3 text-sm text-[#52645A]">
             Peter Mann, trading as The Dad Club
           </p>
+
           <a
             href="mailto:hello@thedadclub.com.au"
             className="mt-3 inline-block break-all font-semibold underline underline-offset-4"
