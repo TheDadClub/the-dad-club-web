@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 };
 
 const appStoreUrl =
-  "https://apps.apple.com/app/the-dad-club/id6820410310";
+  "https://apps.apple.com/au/app/the-dad-club/id6820410310";
 
 const benefits = [
   {
