@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { requireAdmin } from "../lib/admin";
+import { venueStatusLabel } from "../lib/venueReviews";
+import VenueReviewForm from "./VenueReviewForm";
 
 export type VenueSearchParams = Promise<{
   page?: string | string[];
+  saved?: string | string[];
+  error?: string | string[];
 }>;
 
 type VenueEnquiry = {
@@ -19,7 +23,11 @@ type VenueEnquiry = {
   complimentary: string;
   notes: string | null;
   status: string;
+  internal_notes: string | null;
+  follow_up_at: string | null;
+  review_version: number;
   created_at: string;
+  updated_at: string;
 };
 
 const pageSize = 20;
@@ -48,6 +56,15 @@ const capacityLabels: Record<string, string> = {
   "13-20": "13–20 people",
   "20+": "More than 20 people",
   unsure: "Not sure",
+};
+
+const errors: Record<string, string> = {
+  invalid:
+    "Please check the review fields. Notes must be no longer than 5,000 characters and the follow-up date must be valid.",
+  stale:
+    "This enquiry changed after you opened it, or is no longer available. The latest details are shown below. Check them before saving again.",
+  save:
+    "We couldn't save the review. Please try again.",
 };
 
 function displayDate(value: string) {
@@ -81,6 +98,11 @@ export default async function VenueEnquiries({
 
   const offset = (page - 1) * pageSize;
 
+  const errorMessage =
+    typeof params.error === "string"
+      ? errors[params.error]
+      : undefined;
+
   let enquiries: VenueEnquiry[] = [];
   let total = 0;
   let failed = false;
@@ -89,7 +111,7 @@ export default async function VenueEnquiries({
     const { data, count, error } = await database
       .from("venue_partners")
       .select(
-        "id, venue_name, suburb, contact_name, contact_email, contact_phone, capacity, privacy, equipment, evenings, complimentary, notes, status, created_at",
+        "id, venue_name, suburb, contact_name, contact_email, contact_phone, capacity, privacy, equipment, evenings, complimentary, notes, status, internal_notes, follow_up_at, review_version, created_at, updated_at",
         { count: "exact" },
       )
       .order("created_at", { ascending: false })
@@ -142,6 +164,24 @@ export default async function VenueEnquiries({
           View public venue page →
         </Link>
       </div>
+
+      {params.saved === "saved" && (
+        <p
+          role="status"
+          className="mt-6 rounded-2xl border border-[#173A2C]/20 bg-[#E8EBDD] p-5 font-semibold"
+        >
+          Venue review saved. No email was sent.
+        </p>
+      )}
+
+      {errorMessage && (
+        <p
+          role="alert"
+          className="mt-6 rounded-2xl border border-[#C96632]/40 bg-[#C96632]/10 p-5"
+        >
+          {errorMessage}
+        </p>
+      )}
 
       {failed ? (
         <div
@@ -201,8 +241,9 @@ export default async function VenueEnquiries({
 
             return (
               <article
-                key={venue.id}
-                className="rounded-[24px] border border-[#173A2C]/15 bg-[#FBF8F0] p-6 sm:p-8"
+                key={`${venue.id}-${venue.review_version}`}
+                id={`venue-${venue.id}`}
+                className="scroll-mt-6 rounded-[24px] border border-[#173A2C]/15 bg-[#FBF8F0] p-6 sm:p-8"
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0">
@@ -216,8 +257,8 @@ export default async function VenueEnquiries({
                     </p>
                   </div>
 
-                  <span className="rounded-full bg-[#E8EBDD] px-4 py-2 text-sm font-bold capitalize">
-                    {venue.status.replace(/_/g, " ")}
+                  <span className="rounded-full bg-[#E8EBDD] px-4 py-2 text-sm font-bold">
+                    {venueStatusLabel(venue.status)}
                   </span>
                 </div>
 
@@ -251,6 +292,7 @@ export default async function VenueEnquiries({
                         <dt className="text-sm font-bold">
                           {label}
                         </dt>
+
                         <dd className="mt-1 break-words text-sm leading-relaxed text-[#52645A]">
                           {value}
                         </dd>
@@ -262,12 +304,29 @@ export default async function VenueEnquiries({
                 {venue.notes && (
                   <section className="mt-6 border-t border-[#173A2C]/15 pt-5">
                     <h3 className="text-sm font-bold">
-                      Additional details
+                      Details supplied by the venue
                     </h3>
+
                     <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-[#52645A]">
                       {venue.notes}
                     </p>
                   </section>
+                )}
+
+                <VenueReviewForm
+                  id={venue.id}
+                  status={venue.status}
+                  internalNotes={venue.internal_notes}
+                  followUpAt={venue.follow_up_at}
+                  reviewVersion={venue.review_version}
+                  page={page}
+                />
+
+                {venue.review_version > 0 && (
+                  <p className="mt-4 text-xs text-[#52645A]">
+                    Last updated {displayDate(venue.updated_at)}
+                    {" · "}Australian Central time
+                  </p>
                 )}
               </article>
             );
