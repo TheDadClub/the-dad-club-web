@@ -5,8 +5,8 @@ const sections = [
     title: "Who we are and what this covers",
     paragraphs: [
       "The Dad Club is currently operated by Peter Mann, trading as The Dad Club, in South Australia. In this notice, 'we', 'us' and 'our' refer to that operator.",
-      "This notice covers www.thedadclub.com.au, registrations of interest, facilitator applications, venue partnership enquiries, member sign-in, session bookings, waitlists, related emails and enquiries, and information managed through our private administration tools. The Dad Club mobile app has a separate privacy notice.",
-      "Existing active members can sign in and book available sessions using their session entitlements. Authorised administrators manage members, session dates, entitlements, bookings, attendance, waitlist information and venue partnership enquiries. Online payments are not currently collected through the website.",
+      "This notice covers www.thedadclub.com.au, registrations of interest, facilitator applications, venue partnership enquiries, member sign-in, session bookings and cancellations, waitlists, related emails and enquiries, and information managed through our private administration tools. The Dad Club mobile app has a separate privacy notice.",
+      "Existing active members can sign in, book available sessions using their session entitlements and cancel eligible bookings before the session starts. Authorised administrators manage members, session dates, entitlements, bookings, attendance, waitlist information and venue partnership enquiries. Online payments are not currently collected through the website.",
     ],
   },
   {
@@ -72,23 +72,26 @@ const sections = [
     paragraphs: [
       "We manage session entitlements, bookings, cancellations and recorded attendance. Records include identifiers linking the member and session, booking status, relevant dates and times, and identifiers for the member or administrator responsible for recorded actions.",
       "Signed-in active members can view their own entitlements and bookings and choose from published future session dates. The website checks session capacity, entitlement availability and existing bookings before accepting a booking.",
-      "Authorised administrators can also create bookings, cancel bookings and record attendance. Booking reserves the entitlement for that session type; attendance marks it used. Cancelling a booking releases the place and allows an otherwise available entitlement to be booked again.",
+      "Authorised administrators can also create bookings, cancel bookings and record attendance. Booking reserves the entitlement for that session type; attendance marks it used. Cancelling a booking releases the place and allows an otherwise available entitlement to be booked again. Cancellation does not change an entitlement that is already used or revoked into an available entitlement.",
       "After a new booking is saved, the website attempts to send a confirmation email to the email address recorded on the member profile. The email includes the session title, date and times, Adelaide time-zone information, venue or delivery details, and booking reference.",
       "We record the booking confirmation sending status and, where confirmed, the time our server recorded the email provider's acceptance. A booking remains saved if email sending fails. Older bookings may not have a tracked confirmation-email outcome.",
       "Booking confirmations, cancellation confirmations and session reminders are operational messages about participation. They are not receipts, proof of payment or confirmation of a refund.",
       "Attendance and later session-detail changes do not currently trigger their own automated confirmation emails. A released place may trigger a separate availability alert to eligible waitlisted members.",
-      "Members currently need to contact us to change or cancel a booking. The member area does not yet provide self-service cancellation or rescheduling.",
+      "Signed-in active members can cancel their own bookings while the booking remains booked and the session has not started. The member must explicitly confirm cancellation. The website records the cancellation time and the signed-in user's identifier as the person responsible for the update.",
+      "Member cancellation cannot be used to cancel another member's booking or change recorded attendance. After the session starts, members need to contact us for assistance. Administrator cancellation remains available through the private administration tools.",
+      "Cancelling releases the place without holding a replacement. Members may make a new booking if their entitlement is available and a suitable place remains. The member area does not yet provide a single-step rescheduling feature that secures a replacement before releasing the original booking. Contact us if you need help changing dates.",
+      "Cancelling a booking does not automatically cancel membership, process a refund or reopen previous waitlist entries.",
     ],
   },
   {
     title: "Booking cancellation confirmations",
     paragraphs: [
-      "After an administrator successfully cancels an individual booking through the website, we attempt to send a cancellation confirmation to the email address recorded on the member profile.",
+      "After an administrator or an eligible signed-in member successfully cancels an individual booking through the website, we attempt to send a cancellation confirmation to the email address recorded on the member profile.",
       "The email identifies the cancelled booking using its session title, scheduled start time, applicable Australian Central time zone, venue or delivery name and booking reference. It also includes a member-login link and information about checking other dates.",
       "The cancellation email does not include the member's name, phone number, due or birth dates, app check-ins or information about other members.",
-      "Cancellation is saved before email sending is attempted. An email failure does not undo the cancellation. A cancellation confirmation may still be relevant if the member has been archived, the session is no longer published or the session date has passed.",
-      "We record the booking identifier, the creation time of the cancellation-email record, its sending status and, where confirmed, the time our server recorded the email provider's acceptance. Authorised administrators can see these statuses alongside cancelled bookings.",
-      "The sending process claims the pending record before contacting the provider and uses a technical identifier intended to prevent duplicate sending. Reopening or refreshing the dashboard does not resend the email. Interrupted or uncertain attempts are not automatically retried and need review before any further send.",
+      "Cancellation is saved before email sending is attempted. An email failure does not undo the cancellation. Administrator cancellations may also concern archived members, unpublished sessions or past session dates; those circumstances do not by themselves prevent a cancellation confirmation. Member self-service cancellation requires an active membership and a session that has not started.",
+      "We record the booking identifier, the creation time of the cancellation-email record, its sending status and, where confirmed, the time our server recorded the email provider's acceptance. Authorised administrators can see these statuses alongside cancelled bookings. After a member cancellation, the member area indicates whether provider acceptance was confirmed.",
+      "The sending process claims the pending record before contacting the provider and uses a technical identifier intended to prevent duplicate sending. Reopening or refreshing the dashboard does not resend the email. A repeated cancellation attempt against an already cancelled booking does not create another cancellation or trigger another email through this workflow. Interrupted or uncertain attempts are not automatically retried and need review before any further send.",
       "Older cancellations are not automatically emailed retrospectively and may show no recorded sending outcome.",
       "Cancelling an individual booking does not automatically book another date, reopen previous waitlists, close the member account or cancel the whole session. Changing a whole session's status does not currently send individual cancellation confirmations through this workflow.",
       "If you receive an unexpected cancellation email, contact hello@thedadclub.com.au so we can investigate.",
@@ -104,7 +107,7 @@ const sections = [
       "Reminders are eligible only while the member is active, the booking remains booked, the session is published and the recorded session start time still matches. Eligibility is checked again before sending. Reminders are not attempted after the session starts.",
       "The system prevents a new reminder record for the same booking, session start time and reminder type. A rescheduled session may become eligible for a reminder for its new date.",
       "A reminder is not guaranteed to arrive or arrive at an exact time. Service interruptions, sending limits, changed details and email delivery issues may prevent or delay it. Please retain your booking details and check the member area.",
-      "Contact us if you cannot attend, need to change a booking or want help with reminder preferences. A cancellation recorded after the final sending check cannot recall an email already being processed or accepted by the email provider.",
+      "If you cannot attend, you can cancel an eligible booking through the member area before the session starts or contact us for assistance. Contact us if you need to change a booking or want help with reminder preferences. A cancellation recorded after the final sending check cannot recall an email already being processed or accepted by the email provider.",
       "Session reminders do not subscribe members to unrelated marketing.",
     ],
   },
@@ -204,7 +207,8 @@ const sections = [
     title: "Security",
     paragraphs: [
       "We use HTTPS for website connections, restrict database access and keep administrative credentials on the server rather than in public browser code.",
-      "Private administration requires sign-in and an administrator authorisation check. This includes viewing venue enquiries and saving venue review details. Member access requires verified sign-in and a corresponding active member record. Booking and waitlist requests are checked against the authenticated member.",
+      "Private administration requires sign-in and an administrator authorisation check. This includes viewing venue enquiries and saving venue review details. Member access requires verified sign-in and a corresponding active member record. Booking, cancellation and waitlist requests are checked against the authenticated member.",
+      "For member cancellation, the database checks that the booking belongs to the signed-in active member, remains booked and concerns a session that has not started. Members cannot use the cancellation action to record attendance or reassign a booking.",
       "Scheduled email endpoints require a private access key. Queue-processing functions and records are restricted to trusted server access. Workers recheck relevant member, booking, waitlist, entitlement and session eligibility before attempting an email.",
       "Cancellation email sending requires a saved cancellation and a pending tracking record. The booking's cancelled status is checked again before the sending request.",
       "The website uses verification checks and authentication-service limits to help protect login-code requests. Do not share your login codes or leave a session signed in on a shared device.",
@@ -230,7 +234,7 @@ const sections = [
     paragraphs: [
       "You can withdraw your program interest, facilitator application or venue enquiry, ask us to stop relevant contact, request access to your information, correct inaccurate details or request deletion by emailing hello@thedadclub.com.au.",
       "Venue contacts can reply to the acknowledgement email to update their information or explain their contact preferences. There is not currently a venue login or self-service enquiry-editing page.",
-      "Members can view their bookings and entitlements, join eligible waitlists and leave their own waiting entries through the member area. Contact us to change member details, request a booking change or ask about account closure.",
+      "Members can view their bookings and entitlements, cancel eligible bookings before the session starts, join eligible waitlists and leave their own waiting entries through the member area. Contact us to change member details, request help rescheduling, discuss a booking after the session has started or ask about account closure.",
       "You can leave a waitlist if you no longer want an availability alert for that date. An email already being processed may still arrive. Contact us if you need help managing waiting entries or contact preferences.",
       "Contact us if you need help with session reminders. There is not currently a separate reminder-preference control in the member area.",
       "You can also reply to a program or recruitment email to explain your preferences. Operational messages about a requested login, enquiry, booking, cancellation, session reminder or waitlist are separate from optional program updates.",
@@ -249,13 +253,13 @@ const sections = [
     title: "App information and research",
     paragraphs: [
       "The website does not access profiles, journey dates, check-ins or saved cards stored locally in The Dad Club app. Information entered separately on the website is managed under this notice.",
-      "Registering interest, applying to facilitate, submitting a venue enquiry, signing in, booking, joining a waitlist or participating in the program does not enrol you in research. Any future research participation would require a separate process, appropriate ethics review, clear information and explicit informed consent.",
+      "Registering interest, applying to facilitate, submitting a venue enquiry, signing in, booking, cancelling, joining a waitlist or participating in the program does not enrol you in research. Any future research participation would require a separate process, appropriate ethics review, clear information and explicit informed consent.",
     ],
   },
   {
     title: "Changes to this notice",
     paragraphs: [
-      "This version was updated on 12 November 2026 to include venue partnership enquiries, internal review information, follow-up dates and acknowledgement-email sending records.",
+      "This version was updated on 12 November 2026 to cover venue partnership enquiries, internal venue reviews and follow-up dates, venue acknowledgement emails, and member self-service booking cancellation with related cancellation records and emails.",
       "We will update this notice when our services, operator or information-handling practices change.",
     ],
   },
@@ -292,7 +296,7 @@ export default function WebsitePrivacyPage() {
   return (
     <PrivacyDocument
       title="WEBSITE PRIVACY"
-      introduction="How we handle information when you visit the website, register your interest, apply to facilitate, enquire about venue partnerships, sign in as a member, book sessions, join waitlists, receive operational emails or contact The Dad Club."
+      introduction="How we handle information when you visit the website, register your interest, apply to facilitate, enquire about venue partnerships, sign in as a member, book or cancel sessions, join waitlists, receive operational emails or contact The Dad Club."
       lastUpdated="12 November 2026"
       sections={sections}
       providers={providers}

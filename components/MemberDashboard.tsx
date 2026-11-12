@@ -8,6 +8,7 @@ import { memberSignOut } from "../app/members/actions";
 import { bookMemberSession } from "../app/members/booking-actions";
 import { changeMemberWaitlist } from "../app/members/waitlist-actions";
 import MemberBookButton from "./MemberBookButton";
+import MemberCancelBooking from "./MemberCancelBooking";
 import MemberWaitlistButton from "./MemberWaitlistButton";
 import MemberWaitlistInformation from "./MemberWaitlistInformation";
 
@@ -17,6 +18,9 @@ export type MemberSearchParams = Promise<{
   error?: string | string[];
   waitlist?: string | string[];
   waitlistError?: string | string[];
+  cancelled?: string | string[];
+  cancellationEmail?: string | string[];
+  cancelError?: string | string[];
 }>;
 
 type Entitlement = {
@@ -51,14 +55,23 @@ type Session = {
 const sessionFields =
   "id, session_number, starts_at, ends_at, venue_name, venue_address, capacity, status";
 
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const errorMessages: Record<string, string> = {
   invalid: "Please choose a session from the dates below.",
-  access: "Your membership could not be used for this booking. Please contact us.",
-  session: "That session is no longer available. Please choose another date.",
-  started: "That session has already started. Please choose a future date.",
-  entitlement: "This session entitlement is not available. Check your bookings below or contact us.",
-  duplicate: "You already have a booking or attendance recorded for this session type. Check below.",
-  full: "That session has just filled up. You can join its waitlist below.",
+  access:
+    "Your membership could not be used for this booking. Please contact us.",
+  session:
+    "That session is no longer available. Please choose another date.",
+  started:
+    "That session has already started. Please choose a future date.",
+  entitlement:
+    "This session entitlement is not available. Check your bookings below or contact us.",
+  duplicate:
+    "You already have a booking or attendance recorded for this session type. Check below.",
+  full:
+    "That session has just filled up. You can join its waitlist below.",
   unknown:
     "We couldn't confirm the booking result. Check your bookings below before trying again. Contact us if you're unsure.",
 };
@@ -74,6 +87,21 @@ const waitlistErrors: Record<string, string> = {
     "We couldn't confirm the waitlist change. Check the current status below before trying again.",
 };
 
+const cancellationErrors: Record<string, string> = {
+  invalid:
+    "Please open the cancellation option for your booking and tick the confirmation box.",
+  access:
+    "We couldn't verify active member access. Please sign in again or contact us.",
+  changed:
+    "That booking is no longer available to cancel. Check your current bookings below.",
+  started:
+    "The session has already started. Please contact us about cancelling.",
+  support:
+    "We couldn't complete this cancellation. Please contact us for help.",
+  unknown:
+    "We couldn't confirm the cancellation result. Check your current bookings below before trying again, or contact us.",
+};
+
 function scalar(value: string | string[] | undefined) {
   return typeof value === "string" ? value : "";
 }
@@ -87,12 +115,14 @@ function SessionDetails({ session }: { session: Session }) {
           {displaySessionDate(session.starts_at)}
         </dd>
       </div>
+
       <div>
         <dt className="font-bold">Ends</dt>
         <dd className="mt-1 text-[#52645A]">
           {displaySessionDate(session.ends_at)}
         </dd>
       </div>
+
       <div>
         <dt className="font-bold">Venue / delivery</dt>
         <dd className="mt-1 whitespace-pre-wrap break-words text-[#52645A]">
@@ -192,6 +222,22 @@ export default async function MemberDashboard({
   const upcomingSessions = (sessionResult.data ?? []) as Session[];
   const waitlist = (waitlistResult.data ?? []) as WaitlistEntry[];
 
+  // Only show cancellation success for this member's saved record.
+  let cancellationConfirmed = false;
+  const cancelledId = scalar(params.cancelled);
+
+  if (uuidPattern.test(cancelledId)) {
+    const { data, error } = await database
+      .from("session_bookings")
+      .select("id")
+      .eq("id", cancelledId)
+      .eq("member_id", member.id)
+      .eq("status", "cancelled")
+      .maybeSingle();
+
+    cancellationConfirmed = !error && Boolean(data);
+  }
+
   const sessionMap = new Map(
     upcomingSessions.map((session) => [session.id, session]),
   );
@@ -233,7 +279,6 @@ export default async function MemberDashboard({
         Date.parse(first.starts_at) - Date.parse(second.starts_at),
     );
 
-  // Request aggregate counts without loading other members' details.
   const capacityResults = await Promise.all(
     selectableSessions.map(async (session) => {
       const { count, error } = await database
@@ -261,6 +306,8 @@ export default async function MemberDashboard({
 
   const errorMessage = errorMessages[scalar(params.error)];
   const waitlistError = waitlistErrors[scalar(params.waitlistError)];
+  const cancellationError =
+    cancellationErrors[scalar(params.cancelError)];
 
   const inactiveWaitlist = waitlist.filter((entry) => {
     const session = sessionMap.get(entry.session_id);
@@ -282,6 +329,7 @@ export default async function MemberDashboard({
 
           <div className="flex flex-wrap items-center gap-5 text-sm font-bold">
             <Link href="/app">The app</Link>
+
             <form action={memberSignOut}>
               <button
                 type="submit"
@@ -309,14 +357,16 @@ export default async function MemberDashboard({
         </p>
 
         <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[#52645A]">
-          All session times below use Adelaide time, including
-          daylight saving. For online sessions, check the time
-          difference if you are joining from another state.
+          All session times below use Australian Central time,
+          including daylight saving when applicable. For online
+          sessions, check the time difference if you are joining
+          from another state.
         </p>
 
         <section id="sessions" className="mt-10 scroll-mt-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <h2 className="text-2xl font-black">Your sessions</h2>
+
             <Link
               href="/members"
               prefetch={false}
@@ -344,6 +394,26 @@ export default async function MemberDashboard({
             </div>
           )}
 
+          {cancellationConfirmed && (
+            <div
+              role="status"
+              className="mt-6 rounded-2xl bg-[#E8EBDD] p-5 leading-relaxed"
+            >
+              <p className="font-bold">
+                Your booking has been cancelled and the place released.
+              </p>
+              <p className="mt-2 text-sm">
+                {params.cancellationEmail === "accepted"
+                  ? "Your cancellation email has been accepted for sending. It may take a few minutes to arrive."
+                  : "Email confirmation wasn't confirmed. Your cancellation remains saved; contact us if you need help."}
+              </p>
+              <p className="mt-2 text-sm">
+                You can choose another date below if your entitlement
+                is available. Another booking is not made automatically.
+              </p>
+            </div>
+          )}
+
           {params.waitlist === "joined" && (
             <p
               role="status"
@@ -363,12 +433,12 @@ export default async function MemberDashboard({
             </p>
           )}
 
-          {(errorMessage || waitlistError) && (
+          {(errorMessage || waitlistError || cancellationError) && (
             <p
               role="alert"
               className="mt-6 rounded-2xl bg-[#C96632]/10 p-5 text-sm leading-relaxed"
             >
-              {errorMessage || waitlistError}
+              {errorMessage || waitlistError || cancellationError}
             </p>
           )}
 
@@ -390,6 +460,11 @@ export default async function MemberDashboard({
               const booked = booking?.status === "booked";
               const canChoose =
                 entitlement?.status === "available" && !booking;
+              const canCancel =
+                booked &&
+                !used &&
+                bookedSession !== undefined &&
+                Date.parse(bookedSession.starts_at) > Date.parse(now);
 
               const dates = selectableSessions.filter(
                 (session) => session.session_number === type.number,
@@ -437,6 +512,7 @@ export default async function MemberDashboard({
                       <p className="font-bold">
                         {used ? "Session attended" : "Your booking"}
                       </p>
+
                       <SessionDetails session={bookedSession} />
 
                       {booked && bookedSession.status !== "published" && (
@@ -446,9 +522,18 @@ export default async function MemberDashboard({
                         </p>
                       )}
 
+                      {canCancel && booking && (
+                        <MemberCancelBooking
+                          bookingId={booking.id}
+                          sessionTitle={type.title}
+                        />
+                      )}
+
                       {booked && (
                         <p className="mt-4 text-sm leading-relaxed text-[#52645A]">
-                          Need to change your booking?{" "}
+                          {canCancel
+                            ? "Need help changing to another date? "
+                            : "Need help with this booking? "}
                           <a
                             href="mailto:hello@thedadclub.com.au"
                             className="font-bold underline underline-offset-4"
@@ -495,6 +580,7 @@ export default async function MemberDashboard({
                                     } available`
                                   : "Currently full"}
                               </p>
+
                               {waiting && (
                                 <span className="rounded-full bg-[#C96632]/15 px-4 py-2 text-xs font-bold">
                                   Waitlisted
@@ -555,6 +641,7 @@ export default async function MemberDashboard({
               <h3 className="text-xl font-black">
                 Other waitlist entries
               </h3>
+
               <p className="mt-3 text-sm leading-relaxed text-[#52645A]">
                 These dates have started or are no longer published.
                 You can remove your waitlist entries below.
