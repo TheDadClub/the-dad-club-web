@@ -5,8 +5,8 @@ const sections = [
     title: "Who we are and what this covers",
     paragraphs: [
       "The Dad Club is currently operated by Peter Mann, trading as The Dad Club, in South Australia. In this notice, 'we', 'us' and 'our' refer to that operator.",
-      "This notice covers www.thedadclub.com.au, registrations of interest, facilitator applications, member sign-in, session bookings, waitlists, related emails and enquiries, and information managed through our private administration tools. The Dad Club mobile app has a separate privacy notice.",
-      "Existing active members can sign in and book available sessions using their session entitlements. Authorised administrators manage members, session dates, entitlements, bookings, attendance and waitlist information. Online payments are not currently collected through the website.",
+      "This notice covers www.thedadclub.com.au, registrations of interest, facilitator applications, venue partnership enquiries, member sign-in, session bookings, waitlists, related emails and enquiries, and information managed through our private administration tools. The Dad Club mobile app has a separate privacy notice.",
+      "Existing active members can sign in and book available sessions using their session entitlements. Authorised administrators manage members, session dates, entitlements, bookings, attendance, waitlist information and venue partnership enquiries. Online payments are not currently collected through the website.",
     ],
   },
   {
@@ -29,6 +29,31 @@ const sections = [
       "Submitting an application does not create a facilitator account, approve you to deliver sessions or guarantee employment or work.",
       "We keep one initial application per email address. A repeat submission does not overwrite the existing application or trigger another automated acknowledgement email. Contact us to update your information.",
       "After saving a new application, we attempt to send an automated acknowledgement to the email address provided. The application remains saved if email sending fails. An on-page acknowledgement does not guarantee email delivery.",
+    ],
+  },
+  {
+    title: "Venue partnership enquiries",
+    paragraphs: [
+      "When you enquire on behalf of a venue, we collect the venue name, suburb, contact person's name and email address, and an optional contact phone number.",
+      "We also collect the room capacity category, type of space, presentation equipment, potentially available Monday–Thursday evenings, willingness to consider complimentary room use and any optional notes you provide.",
+      "We record an enquiry identifier, creation and update times, source label and the time of your agreement to partnership contact. The form asks you to confirm that you are authorised to enquire on behalf of the venue.",
+      "We use this information to assess potential venues, discuss arrangements and manage venue partnerships. Submitting an enquiry does not commit the venue to hosting, confirm a session or subscribe the contact person to unrelated marketing.",
+      "Authorised administrators can record a partnership review status, internal notes and a follow-up date. A technical review version helps prevent conflicting edits. Follow-up dates are internal planning information and do not currently trigger automated reminders.",
+      "Venue contact details, enquiries and internal review notes are not published through the public venue page. If a partnership proceeds, we will discuss the venue and session details intended for participant-facing information.",
+      "Please keep optional notes relevant to the venue enquiry and avoid unnecessary sensitive personal or health information.",
+    ],
+  },
+  {
+    title: "Venue enquiry acknowledgement emails",
+    paragraphs: [
+      "After a new venue enquiry is saved, we attempt to send an acknowledgement to the contact email address provided.",
+      "The email confirms receipt, explains the next steps and summarises the general partnership proposal. It does not confirm acceptance as a venue partner, reserve dates or create a hosting commitment.",
+      "The email request includes the recipient email address, general message content and a technical enquiry identifier used to help prevent duplicate sending of the same request. It does not include the contact person's name, venue name, phone number, suburb, availability, room details, optional notes or internal review information.",
+      "We record the acknowledgement sending status and, where confirmed, the provider's message identifier and the time our server recorded acceptance. Authorised administrators can see the sending status and acceptance time alongside the enquiry.",
+      "The enquiry remains saved if email sending or status recording fails. The on-page success message confirms the enquiry was saved, not that an email reached the recipient.",
+      "Older enquiries are not automatically emailed retrospectively and may show 'Not recorded'. Refreshing the dashboard or saving an admin review does not resend the acknowledgement. Failed, interrupted or uncertain attempts are not automatically retried by this workflow.",
+      "Each fresh successful form submission creates another enquiry and may generate another acknowledgement, even if the same contact email address or venue has been used before. Venue enquiries are not currently deduplicated by email address.",
+      "If you receive an acknowledgement for an enquiry you did not submit, reply or contact hello@thedadclub.com.au so we can investigate.",
     ],
   },
   {
@@ -127,29 +152,29 @@ const sections = [
       "If you email us, we receive your email address and the information you include. Please avoid providing unnecessary sensitive personal or health information.",
       "Our hosting, authentication and security providers process technical information associated with website requests, such as network addresses, browser and device information, request times and security or error events.",
       "Technical information supports website delivery, sign-in, troubleshooting and protection against misuse.",
-      "Required form fields are identified. Without the required details and contact agreement, we cannot process the relevant expression of interest. Without a verified email and an active member record, we cannot provide member access. You can browse the public website without submitting a form or signing in.",
+      "Required form fields are identified. Without the required details and contact agreement, we cannot process the relevant expression of interest or venue enquiry. Without a verified email and an active member record, we cannot provide member access. You can browse the public website without submitting a form or signing in.",
     ],
   },
   {
     title: "Our service providers",
     paragraphs: [
-      "Vercel hosts the website and runs server code that processes submissions, member requests, private administration, scheduled session reminders and availability-email checks. Requests pass through Vercel before reaching the relevant database, authentication or email service.",
-      "Supabase stores registration, application, member, entitlement, booking, attendance, waitlist and email-processing information in a database configured in the Sydney region. Supabase Authentication supports administrator and member sign-in and manages authentication accounts and sessions.",
+      "Vercel hosts the website and runs server code that processes submissions, venue enquiries, member requests, private administration, scheduled session reminders and availability-email checks. Requests pass through Vercel before reaching the relevant database, authentication or email service.",
+      "Supabase stores registration, application, venue partnership, member, entitlement, booking, attendance, waitlist and email-processing information in a database configured in the Sydney region. Supabase Authentication supports administrator and member sign-in and manages authentication accounts and sessions.",
       "Cloudflare Turnstile provides automated-submission checks for public forms and member login-code requests. Your browser connects to Cloudflare, which processes technical signals used for verification. Our server sends the verification token to Cloudflare without adding the personal details entered in the form.",
-      "Resend sends interest-registration confirmations, facilitator application acknowledgements, booking confirmations, booking cancellation confirmations, session reminders and waitlist availability alerts. Supabase Authentication also uses our Resend connection to deliver member login-code emails. Resend processes recipient email addresses, message content and technical delivery information needed to provide these services.",
-      "Interest-registration and facilitator acknowledgement email requests do not include names, phone numbers, locations, stages of fatherhood, optional enquiry messages or facilitator application answers. Technical registration or application identifiers help prevent duplicate sending.",
+      "Resend sends interest-registration confirmations, facilitator application acknowledgements, venue enquiry acknowledgements, booking confirmations, booking cancellation confirmations, session reminders and waitlist availability alerts. Supabase Authentication also uses our Resend connection to deliver member login-code emails. Resend processes recipient email addresses, message content and technical delivery information needed to provide these services.",
+      "Interest-registration, facilitator acknowledgement and venue enquiry acknowledgement email requests do not include names, phone numbers, locations, stages of fatherhood, optional enquiry messages or application answers. Venue acknowledgement requests also exclude venue names and room details. Technical registration, application or enquiry identifiers help prevent duplicate sending of the same request.",
       "Booking confirmations and cancellation confirmations include the relevant session and venue details and a booking reference. Cancellation confirmations, session reminders and availability alerts include a member-login link. These messages do not include due or birth dates, phone numbers, app check-ins or information about other members. Login emails contain the one-time code and sign-in instructions.",
-      "Microsoft 365 handles messages sent to and from hello@thedadclub.com.au, including replies to operational emails, recruitment correspondence and requests for assistance.",
+      "Microsoft 365 handles messages sent to and from hello@thedadclub.com.au, including replies to operational emails, recruitment correspondence, venue partnership discussions and requests for assistance.",
     ],
   },
   {
     title: "Access and disclosure",
     paragraphs: [
-      "Information is available to the operator and people authorised for the relevant enquiry, recruitment or program administration purpose. Facilitator applications are accessible through the website only to authorised administrators.",
+      "Information is available to the operator and people authorised for the relevant enquiry, recruitment, venue partnership or program administration purpose. Facilitator applications and venue enquiries, including internal review notes, are accessible through the website only to authorised administrators.",
       "The member area is restricted to the signed-in member's own member information, entitlements, bookings and waitlist entries. Shared session dates and aggregate place availability are displayed without revealing other members' names or booking details.",
-      "Signing in as a member does not grant administrator access or access to other members' records, interest registrations, facilitator applications or private email-processing records.",
+      "Signing in as a member does not grant administrator access or access to other members' records, interest registrations, facilitator applications, venue enquiries or private email-processing records.",
       "Service providers process information needed to deliver their services. We may also disclose information where required by law or to obtain professional assistance necessary to manage a privacy or security matter.",
-      "We do not sell this information or publish application, registration, member, booking, waitlist or email-processing records on the public website.",
+      "We do not sell this information or publish application, registration, venue enquiry, internal review, member, booking, waitlist or email-processing records on the public website.",
     ],
   },
   {
@@ -168,17 +193,18 @@ const sections = [
       "These source labels do not identify the person who shared a link or recruitment image. The form does not request contact details for someone you wish to refer. Technical request logs may still include the requested URL.",
       "We have not enabled Resend open or click tracking for our operational emails. We do not use those messages to measure whether you opened them or clicked a link.",
       "Email delivery information, such as acceptance, delivery, delay, bounce or complaint events, may still be processed by the email provider. A database status of 'sent' or 'accepted' means the provider accepted the email, not that it necessarily reached your inbox.",
-      "For interest, facilitator, booking and cancellation confirmations, 'not_confirmed' means our server could not confirm acceptance; a timed-out request may still have succeeded. 'Pending' means no final sending outcome has been recorded. 'Not recorded' means no tracked outcome is available, including for some older records.",
+      "For interest, facilitator, venue enquiry, booking and cancellation acknowledgements or confirmations, 'not_confirmed' means our server could not confirm acceptance; a timed-out request may still have succeeded. 'Pending' means no final sending outcome has been recorded. 'Not recorded' means no tracked outcome is available, including for some older records.",
+      "For venue acknowledgements, 'failed' means the email request was not accepted or the required email configuration was unavailable. The enquiry remains saved.",
       "For availability alerts and session reminders, 'queued' means waiting for eligible processing and 'processing' means a worker has claimed the record. 'Accepted' means provider acceptance was recorded. 'Skipped' means the request was no longer eligible when checked. 'Review' means automatic processing has stopped and the record needs review.",
       "A booking confirmation may also be marked 'skipped' if the booking, member or session was no longer eligible when checked. A cancellation confirmation may be marked 'skipped' if the booking was no longer cancelled when checked.",
-      "Email sending statuses are separate from recruitment decisions, membership status, booking status and attendance.",
+      "Email sending statuses are separate from recruitment decisions, venue partnership decisions, membership status, booking status and attendance.",
     ],
   },
   {
     title: "Security",
     paragraphs: [
       "We use HTTPS for website connections, restrict database access and keep administrative credentials on the server rather than in public browser code.",
-      "Private administration requires sign-in and an administrator authorisation check. Member access requires verified sign-in and a corresponding active member record. Booking and waitlist requests are checked against the authenticated member.",
+      "Private administration requires sign-in and an administrator authorisation check. This includes viewing venue enquiries and saving venue review details. Member access requires verified sign-in and a corresponding active member record. Booking and waitlist requests are checked against the authenticated member.",
       "Scheduled email endpoints require a private access key. Queue-processing functions and records are restricted to trusted server access. Workers recheck relevant member, booking, waitlist, entitlement and session eligibility before attempting an email.",
       "Cancellation email sending requires a saved cancellation and a pending tracking record. The booking's cancelled status is checked again before the sending request.",
       "The website uses verification checks and authentication-service limits to help protect login-code requests. Do not share your login codes or leave a session signed in on a shared device.",
@@ -190,8 +216,9 @@ const sections = [
     paragraphs: [
       "We review interest registrations when they reach 12 months old and delete records no longer needed for their collection purpose. This is a review process, not an automatic deletion feature.",
       "We also review facilitator applications at 12 months and remove information no longer needed for recruitment. Continuing recruitment or an agreed next step may justify longer retention. Information required for any later employment or onboarding process will be addressed separately.",
+      "Venue enquiries, contact details, internal notes and follow-up information are retained while needed to assess or manage a partnership, respond to enquiries and maintain relevant operational records. We review information when it is no longer needed. Changing a venue's review status does not automatically delete its enquiry.",
       "Member, authentication, booking, attendance, entitlement and waitlist information is retained while needed to administer participation, access, remaining entitlements, relevant enquiries and operational records, and reviewed when no longer needed for those purposes.",
-      "Email queue records, saved sending requests and sending outcomes, including booking confirmations, cancellation confirmations, session reminders and availability alerts, are retained while needed to manage delivery, prevent duplicate processing and investigate relevant issues. They are subject to review rather than automatic deletion after sending.",
+      "Email queue records, saved sending requests and sending outcomes, including venue enquiry acknowledgements, booking confirmations, cancellation confirmations, session reminders and availability alerts, are retained while needed to manage delivery, prevent duplicate processing and investigate relevant issues. They are subject to review rather than automatic deletion after sending.",
       "Leaving a waitlist, cancelling a booking or signing out does not automatically delete all associated records, saved email requests or the authentication account.",
       "Information may be retained longer where there is an ongoing enquiry or another necessary reason, including a legal obligation. We do not retain information indefinitely simply because it was collected.",
       "Email correspondence, authentication and security logs, other provider logs and backups may have separate retention periods. Deleting a database record does not instantly remove all copies from email systems or backups.",
@@ -201,11 +228,12 @@ const sections = [
   {
     title: "Your choices, access and corrections",
     paragraphs: [
-      "You can withdraw your program interest or facilitator application, ask us to stop relevant contact, request access to your information, correct inaccurate details or request deletion by emailing hello@thedadclub.com.au.",
+      "You can withdraw your program interest, facilitator application or venue enquiry, ask us to stop relevant contact, request access to your information, correct inaccurate details or request deletion by emailing hello@thedadclub.com.au.",
+      "Venue contacts can reply to the acknowledgement email to update their information or explain their contact preferences. There is not currently a venue login or self-service enquiry-editing page.",
       "Members can view their bookings and entitlements, join eligible waitlists and leave their own waiting entries through the member area. Contact us to change member details, request a booking change or ask about account closure.",
       "You can leave a waitlist if you no longer want an availability alert for that date. An email already being processed may still arrive. Contact us if you need help managing waiting entries or contact preferences.",
       "Contact us if you need help with session reminders. There is not currently a separate reminder-preference control in the member area.",
-      "You can also reply to a program or recruitment email to explain your preferences. Operational messages about a requested login, booking, cancellation, session reminder or waitlist are separate from optional program updates.",
+      "You can also reply to a program or recruitment email to explain your preferences. Operational messages about a requested login, enquiry, booking, cancellation, session reminder or waitlist are separate from optional program updates.",
       "We may need to verify your identity before providing or changing information. We will respond within a reasonable time and explain if we cannot fulfil a request.",
     ],
   },
@@ -221,13 +249,13 @@ const sections = [
     title: "App information and research",
     paragraphs: [
       "The website does not access profiles, journey dates, check-ins or saved cards stored locally in The Dad Club app. Information entered separately on the website is managed under this notice.",
-      "Registering interest, applying to facilitate, signing in, booking, joining a waitlist or participating in the program does not enrol you in research. Any future research participation would require a separate process, appropriate ethics review, clear information and explicit informed consent.",
+      "Registering interest, applying to facilitate, submitting a venue enquiry, signing in, booking, joining a waitlist or participating in the program does not enrol you in research. Any future research participation would require a separate process, appropriate ethics review, clear information and explicit informed consent.",
     ],
   },
   {
     title: "Changes to this notice",
     paragraphs: [
-      "This version was updated on 29 October 2026 to cover member email-code sign-in, self-service session booking, booking confirmations, individual booking cancellation confirmations, automated session reminders, session waitlists, automated availability alerts and related email-processing records.",
+      "This version was updated on 12 November 2026 to include venue partnership enquiries, internal review information, follow-up dates and acknowledgement-email sending records.",
       "We will update this notice when our services, operator or information-handling practices change.",
     ],
   },
@@ -264,7 +292,8 @@ export default function WebsitePrivacyPage() {
   return (
     <PrivacyDocument
       title="WEBSITE PRIVACY"
-      introduction="How we handle information when you visit the website, register your interest, apply to facilitate, sign in as a member, book sessions, join waitlists, receive operational emails or contact The Dad Club."
+      introduction="How we handle information when you visit the website, register your interest, apply to facilitate, enquire about venue partnerships, sign in as a member, book sessions, join waitlists, receive operational emails or contact The Dad Club."
+      lastUpdated="12 November 2026"
       sections={sections}
       providers={providers}
     />

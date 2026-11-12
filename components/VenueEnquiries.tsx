@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAdmin } from "../lib/admin";
 import { venueStatusLabel } from "../lib/venueReviews";
 import VenueReviewForm from "./VenueReviewForm";
+import VenueAcknowledgementStatus from "./VenueAcknowledgementStatus";
 
 export type VenueSearchParams = Promise<{
   page?: string | string[];
@@ -28,6 +29,8 @@ type VenueEnquiry = {
   review_version: number;
   created_at: string;
   updated_at: string;
+  acknowledgement_email_status: string;
+  acknowledgement_email_accepted_at: string | null;
 };
 
 const pageSize = 20;
@@ -111,7 +114,7 @@ export default async function VenueEnquiries({
     const { data, count, error } = await database
       .from("venue_partners")
       .select(
-        "id, venue_name, suburb, contact_name, contact_email, contact_phone, capacity, privacy, equipment, evenings, complimentary, notes, status, internal_notes, follow_up_at, review_version, created_at, updated_at",
+        "id, venue_name, suburb, contact_name, contact_email, contact_phone, capacity, privacy, equipment, evenings, complimentary, notes, status, internal_notes, follow_up_at, review_version, created_at, updated_at, acknowledgement_email_status, acknowledgement_email_accepted_at",
         { count: "exact" },
       )
       .order("created_at", { ascending: false })
@@ -284,6 +287,13 @@ export default async function VenueEnquiries({
                         {venue.contact_phone}
                       </p>
                     )}
+
+                    <VenueAcknowledgementStatus
+                      status={venue.acknowledgement_email_status}
+                      acceptedAt={
+                        venue.acknowledgement_email_accepted_at
+                      }
+                    />
                   </section>
 
                   <dl className="space-y-4">
