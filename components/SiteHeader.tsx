@@ -12,48 +12,58 @@ const links = [
 export default function SiteHeader() {
   return (
     <header className="relative z-50 border-b border-[#173A2C]/10 bg-[#F4F0E5] text-[#173A2C]">
-      {/* Desktop navigation */}
       <nav
         aria-label="Main navigation"
-        className="mx-auto hidden max-w-7xl items-center justify-between gap-5 px-10 py-6 lg:flex"
+        className="mx-auto hidden max-w-7xl items-center justify-between gap-5 px-10 py-6 xl:flex"
       >
         <Link
           href="/"
           className="shrink-0 text-xl font-black tracking-tight"
         >
-          THE DAD CLUB <span className="text-[#C96632]">→</span>
+          THE DAD CLUB{" "}
+          <span className="text-[#C96632]">→</span>
         </Link>
 
-        <div className="flex items-center gap-4 text-xs font-extrabold xl:gap-6">
+        <div className="flex items-center gap-4 text-xs font-extrabold">
           {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="whitespace-nowrap transition hover:text-[#C96632]"
+              className="whitespace-nowrap transition hover:text-[#C96632] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C96632]"
             >
               {link.label}
             </Link>
           ))}
         </div>
 
-        <Link
-          href="/join"
-          className="shrink-0 rounded-full bg-[#173A2C] px-6 py-3 text-xs font-extrabold text-[#F4F0E5] transition hover:bg-[#245540]"
-        >
-          JOIN THE CLUB →
-        </Link>
+        <div className="flex shrink-0 items-center gap-3">
+          <Link
+            href="/members/login"
+            prefetch={false}
+            className="inline-flex min-h-12 items-center rounded-full border border-[#173A2C]/25 px-5 py-3 text-xs font-extrabold transition hover:bg-[#E8EBDD] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C96632]"
+          >
+            MEMBER LOGIN
+          </Link>
+
+          <Link
+            href="/join"
+            className="inline-flex min-h-12 items-center rounded-full bg-[#173A2C] px-6 py-3 text-xs font-extrabold text-[#F4F0E5] transition hover:bg-[#245540] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C96632]"
+          >
+            JOIN THE CLUB →
+          </Link>
+        </div>
       </nav>
 
-      {/* Mobile navigation */}
       <nav
         aria-label="Mobile navigation"
-        className="relative px-5 py-5 md:px-10 lg:hidden"
+        className="relative px-5 py-5 md:px-10 xl:hidden"
       >
         <Link
           href="/"
           className="relative z-10 inline-flex min-h-12 items-center text-lg font-black tracking-tight sm:text-xl"
         >
-          THE DAD CLUB <span className="ml-2 text-[#C96632]">→</span>
+          THE DAD CLUB{" "}
+          <span className="ml-2 text-[#C96632]">→</span>
         </Link>
 
         <details className="group">
@@ -73,15 +83,23 @@ export default function SiteHeader() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="flex min-h-12 items-center rounded-xl px-4 py-3 text-sm font-extrabold hover:bg-[#E8EBDD] active:bg-[#E8EBDD]"
+                  className="flex min-h-12 items-center rounded-xl px-4 py-3 text-sm font-extrabold hover:bg-[#E8EBDD] active:bg-[#E8EBDD] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C96632]"
                 >
                   {link.label}
                 </Link>
               ))}
 
               <Link
+                href="/members/login"
+                prefetch={false}
+                className="mt-3 flex min-h-12 items-center justify-center rounded-full border border-[#173A2C]/25 px-6 py-4 text-center text-xs font-extrabold hover:bg-[#E8EBDD] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C96632]"
+              >
+                MEMBER LOGIN →
+              </Link>
+
+              <Link
                 href="/join"
-                className="mt-3 rounded-full bg-[#173A2C] px-6 py-4 text-center text-xs font-extrabold text-[#F4F0E5] hover:bg-[#245540]"
+                className="mt-2 rounded-full bg-[#173A2C] px-6 py-4 text-center text-xs font-extrabold text-[#F4F0E5] hover:bg-[#245540] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C96632]"
               >
                 REGISTER YOUR INTEREST →
               </Link>
