@@ -9,6 +9,7 @@ import { bookMemberSession } from "../app/members/booking-actions";
 import { changeMemberWaitlist } from "../app/members/waitlist-actions";
 import MemberBookButton from "./MemberBookButton";
 import MemberCancelBooking from "./MemberCancelBooking";
+import MemberChangeBooking from "./MemberChangeBooking";
 import MemberWaitlistButton from "./MemberWaitlistButton";
 import MemberWaitlistInformation from "./MemberWaitlistInformation";
 
@@ -21,6 +22,9 @@ export type MemberSearchParams = Promise<{
   cancelled?: string | string[];
   cancellationEmail?: string | string[];
   cancelError?: string | string[];
+  changed?: string | string[];
+  changeEmail?: string | string[];
+  changeError?: string | string[];
 }>;
 
 type Entitlement = {
@@ -100,6 +104,29 @@ const cancellationErrors: Record<string, string> = {
     "We couldn't complete this cancellation. Please contact us for help.",
   unknown:
     "We couldn't confirm the cancellation result. Check your current bookings below before trying again, or contact us.",
+};
+
+const changeErrors: Record<string, string> = {
+  invalid:
+    "Please choose a replacement date and tick the confirmation box.",
+  access:
+    "We couldn't verify active member access. Please sign in again or contact us.",
+  changed:
+    "That booking is no longer available to change. Check your current bookings below.",
+  same:
+    "Please choose a different session date.",
+  started:
+    "Your original session has already started. Please contact us about changing it.",
+  type:
+    "Please choose another date for the same session type.",
+  session:
+    "The replacement session is no longer available. No move was made by this request. Check your current booking below.",
+  full:
+    "That date has just filled up. No move was made by this request. Check your current booking below and choose another date.",
+  entitlement:
+    "Your matching entitlement could not be used for this change. Check your current booking below or contact us.",
+  unknown:
+    "We couldn't confirm the booking change result. Check your current booking below before trying again. Contact us if you're unsure.",
 };
 
 function scalar(value: string | string[] | undefined) {
@@ -222,7 +249,6 @@ export default async function MemberDashboard({
   const upcomingSessions = (sessionResult.data ?? []) as Session[];
   const waitlist = (waitlistResult.data ?? []) as WaitlistEntry[];
 
-  // Only show cancellation success for this member's saved record.
   let cancellationConfirmed = false;
   const cancelledId = scalar(params.cancelled);
 
@@ -236,6 +262,34 @@ export default async function MemberDashboard({
       .maybeSingle();
 
     cancellationConfirmed = !error && Boolean(data);
+  }
+
+  let confirmedChange: {
+    new_booking_id: string;
+    email_status: string;
+  } | null = null;
+
+  const changeId = scalar(params.changed);
+
+  if (uuidPattern.test(changeId)) {
+    const { data, error } = await database
+      .from("booking_changes")
+      .select("new_booking_id, email_status")
+      .eq("id", changeId)
+      .eq("member_id", member.id)
+      .maybeSingle();
+
+    if (
+      !error &&
+      data &&
+      bookings.some(
+        (booking) =>
+          booking.id === data.new_booking_id &&
+          booking.status === "booked",
+      )
+    ) {
+      confirmedChange = data;
+    }
   }
 
   const sessionMap = new Map(
@@ -308,6 +362,7 @@ export default async function MemberDashboard({
   const waitlistError = waitlistErrors[scalar(params.waitlistError)];
   const cancellationError =
     cancellationErrors[scalar(params.cancelError)];
+  const changeError = changeErrors[scalar(params.changeError)];
 
   const inactiveWaitlist = waitlist.filter((entry) => {
     const session = sessionMap.get(entry.session_id);
@@ -318,8 +373,7 @@ export default async function MemberDashboard({
       Date.parse(session.starts_at) <= Date.parse(now)
     );
   });
-
-  return (
+    return (
     <>
       <header className="bg-[#173A2C] text-[#F4F0E5]">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-5 px-5 py-6 md:px-10">
@@ -414,6 +468,28 @@ export default async function MemberDashboard({
             </div>
           )}
 
+          {confirmedChange && (
+            <div
+              role="status"
+              className="mt-6 rounded-2xl bg-[#E8EBDD] p-5 leading-relaxed"
+            >
+              <p className="font-bold">
+                Your booking has changed. Your new booking is listed below.
+              </p>
+
+              <p className="mt-2 text-sm">
+                Your previous place has been released. This uses
+                the same session entitlement.
+              </p>
+
+              <p className="mt-2 text-sm">
+                {confirmedChange.email_status === "accepted"
+                  ? "Your Booking Changed email has been accepted for sending. It may take a few minutes to arrive."
+                  : "Email confirmation wasn't confirmed. Your new booking remains saved; check the details below or contact us for help."}
+              </p>
+            </div>
+          )}
+
           {params.waitlist === "joined" && (
             <p
               role="status"
@@ -433,12 +509,18 @@ export default async function MemberDashboard({
             </p>
           )}
 
-          {(errorMessage || waitlistError || cancellationError) && (
+          {(errorMessage ||
+            waitlistError ||
+            cancellationError ||
+            changeError) && (
             <p
               role="alert"
               className="mt-6 rounded-2xl bg-[#C96632]/10 p-5 text-sm leading-relaxed"
             >
-              {errorMessage || waitlistError || cancellationError}
+              {errorMessage ||
+                waitlistError ||
+                cancellationError ||
+                changeError}
             </p>
           )}
 
@@ -447,9 +529,11 @@ export default async function MemberDashboard({
               const entitlement = entitlements.find(
                 (item) => item.session_number === type.number,
               );
+
               const booking = bookings.find(
                 (item) => item.session_number === type.number,
               );
+
               const bookedSession = booking
                 ? sessionMap.get(booking.session_id)
                 : undefined;
@@ -457,18 +541,35 @@ export default async function MemberDashboard({
               const used =
                 entitlement?.status === "used" ||
                 booking?.status === "attended";
+
               const booked = booking?.status === "booked";
+
               const canChoose =
                 entitlement?.status === "available" && !booking;
+
               const canCancel =
                 booked &&
                 !used &&
                 bookedSession !== undefined &&
                 Date.parse(bookedSession.starts_at) > Date.parse(now);
 
+              const canChange =
+                canCancel && entitlement?.status === "available";
+
               const dates = selectableSessions.filter(
                 (session) => session.session_number === type.number,
               );
+
+              const changeOptions = dates
+                .filter((session) => session.id !== booking?.session_id)
+                .map((session) => ({
+                  id: session.id,
+                  starts: displaySessionDate(session.starts_at),
+                  ends: displaySessionDate(session.ends_at),
+                  venueName: session.venue_name,
+                  venueAddress: session.venue_address ?? "",
+                  places: placesBySession.get(session.id) ?? 0,
+                }));
 
               const label = used
                 ? "Used"
@@ -488,9 +589,11 @@ export default async function MemberDashboard({
                       <p className="text-xs font-extrabold tracking-wide text-[#C96632]">
                         SESSION {String(type.number).padStart(2, "0")}
                       </p>
+
                       <h3 className="mt-3 text-2xl font-black">
                         {type.title}
                       </h3>
+
                       <p className="mt-2 text-sm text-[#52645A]">
                         {type.timing}
                       </p>
@@ -522,8 +625,18 @@ export default async function MemberDashboard({
                         </p>
                       )}
 
+                      {canChange && booking && (
+                        <MemberChangeBooking
+                          key={`change-${booking.id}`}
+                          bookingId={booking.id}
+                          sessionTitle={type.title}
+                          options={changeOptions}
+                        />
+                      )}
+
                       {canCancel && booking && (
                         <MemberCancelBooking
+                          key={`cancel-${booking.id}`}
                           bookingId={booking.id}
                           sessionTitle={type.title}
                         />
@@ -531,9 +644,7 @@ export default async function MemberDashboard({
 
                       {booked && (
                         <p className="mt-4 text-sm leading-relaxed text-[#52645A]">
-                          {canCancel
-                            ? "Need help changing to another date? "
-                            : "Need help with this booking? "}
+                          Need help with this booking?{" "}
                           <a
                             href="mailto:hello@thedadclub.com.au"
                             className="font-bold underline underline-offset-4"
@@ -564,6 +675,7 @@ export default async function MemberDashboard({
                       {dates.map((session) => {
                         const places =
                           placesBySession.get(session.id) ?? 0;
+
                         const waiting =
                           waitingSessionIds.has(session.id);
 
@@ -680,8 +792,9 @@ export default async function MemberDashboard({
           <p className="mt-6 text-sm leading-relaxed text-[#52645A]">
             Showing the next 50 published dates, plus relevant
             existing bookings and up to 100 waiting entries.
-            Places are checked again when you book. Booking uses
-            your existing entitlement; this page does not collect payment.
+            Places are checked again when you book or change dates.
+            Booking uses your existing entitlement; this page
+            does not collect payment.
           </p>
         </section>
 

@@ -7,6 +7,9 @@ import BookingManager, {
 import AdminWaitlist, {
   type WaitlistSearchParams,
 } from "../../../components/AdminWaitlist";
+import BookingChangeHistory, {
+  type BookingChangeSearchParams,
+} from "../../../components/BookingChangeHistory";
 import { requireAdmin } from "../../../lib/admin";
 
 export const metadata: Metadata = {
@@ -19,10 +22,29 @@ export const metadata: Metadata = {
 
 type SearchParams = Promise<
   BookingSearchParams &
-    WaitlistSearchParams & {
+    WaitlistSearchParams &
+    BookingChangeSearchParams & {
       view?: string | string[];
     }
 >;
+
+const views = [
+  {
+    value: "bookings",
+    label: "Bookings",
+    href: "/admin/bookings",
+  },
+  {
+    value: "waitlist",
+    label: "Waitlists",
+    href: "/admin/bookings?view=waitlist",
+  },
+  {
+    value: "changes",
+    label: "Booking changes",
+    href: "/admin/bookings?view=changes",
+  },
+];
 
 async function BookingsContent({
   searchParams,
@@ -32,7 +54,11 @@ async function BookingsContent({
   await requireAdmin();
 
   const params = await searchParams;
-  const showingWaitlist = params.view === "waitlist";
+
+  const view =
+    params.view === "waitlist" || params.view === "changes"
+      ? params.view
+      : "bookings";
 
   return (
     <div className="min-h-screen bg-[#F4F0E5] text-[#173A2C]">
@@ -41,36 +67,32 @@ async function BookingsContent({
         className="border-b border-[#173A2C]/10"
       >
         <div className="mx-auto flex max-w-6xl flex-wrap gap-3 px-5 py-4 md:px-10">
-          <Link
-            href="/admin/bookings"
-            prefetch={false}
-            aria-current={!showingWaitlist ? "page" : undefined}
-            className={`rounded-full px-5 py-3 text-sm font-bold transition ${
-              !showingWaitlist
-                ? "bg-[#173A2C] text-[#F4F0E5]"
-                : "border border-[#173A2C]/25 hover:bg-[#E8EBDD]"
-            }`}
-          >
-            Bookings
-          </Link>
+          {views.map((item) => {
+            const active = view === item.value;
 
-          <Link
-            href="/admin/bookings?view=waitlist"
-            prefetch={false}
-            aria-current={showingWaitlist ? "page" : undefined}
-            className={`rounded-full px-5 py-3 text-sm font-bold transition ${
-              showingWaitlist
-                ? "bg-[#173A2C] text-[#F4F0E5]"
-                : "border border-[#173A2C]/25 hover:bg-[#E8EBDD]"
-            }`}
-          >
-            Waitlists
-          </Link>
+            return (
+              <Link
+                key={item.value}
+                href={item.href}
+                prefetch={false}
+                aria-current={active ? "page" : undefined}
+                className={`rounded-full px-5 py-3 text-sm font-bold transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C96632] ${
+                  active
+                    ? "bg-[#173A2C] text-[#F4F0E5]"
+                    : "border border-[#173A2C]/25 hover:bg-[#E8EBDD]"
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </div>
       </nav>
 
-      {showingWaitlist ? (
+      {view === "waitlist" ? (
         <AdminWaitlist searchParams={searchParams} />
+      ) : view === "changes" ? (
+        <BookingChangeHistory searchParams={searchParams} />
       ) : (
         <BookingManager searchParams={searchParams} />
       )}
