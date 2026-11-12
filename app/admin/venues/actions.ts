@@ -19,6 +19,17 @@ function returnToVenues(
   result: "saved" | "invalid" | "stale" | "save",
 ): never {
   const query = new URLSearchParams();
+
+  const filter = text(data, "filter_status");
+
+  if (venueReviewStatuses.some((item) => item.value === filter)) {
+    query.set("status", filter);
+  }
+
+  if (text(data, "view") === "due") {
+    query.set("view", "due");
+  }
+
   const page = Number(text(data, "page"));
 
   if (Number.isSafeInteger(page) && page > 1 && page <= 100000) {

@@ -9,6 +9,8 @@ type Props = {
   followUpAt: string | null;
   reviewVersion: number;
   page: number;
+  statusFilter?: string;
+  view?: "all" | "due";
 };
 
 const inputClass =
@@ -30,6 +32,8 @@ export default function VenueReviewForm({
   followUpAt,
   reviewVersion,
   page,
+  statusFilter = "",
+  view = "all",
 }: Props) {
   return (
     <section className="mt-6 border-t border-[#173A2C]/15 pt-6">
@@ -48,6 +52,12 @@ export default function VenueReviewForm({
           value={reviewVersion}
         />
         <input type="hidden" name="page" value={page} />
+        <input
+          type="hidden"
+          name="filter_status"
+          value={statusFilter}
+        />
+        <input type="hidden" name="view" value={view} />
 
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
@@ -93,7 +103,8 @@ export default function VenueReviewForm({
 
             <p className="mt-2 text-xs leading-relaxed text-[#52645A]">
               An internal planning date using Australian Central
-              time. No automatic reminder is sent.
+              time. Clear or move the date after following up.
+              No automatic reminder is sent.
             </p>
           </div>
         </div>
