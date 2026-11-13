@@ -120,3 +120,105 @@ export async function dispatchPurchaseHat(formData: FormData) {
 
   redirect(returnUrl(formData, "saved", "dispatched"));
 }
+
+export async function reviewPurchaseRefund(formData: FormData) {
+  const { user, database } = await requireAdmin();
+
+  const orderId = field(formData, "order_id");
+  const refundAt = field(formData, "refund_snapshot_at");
+  const resolution = field(formData, "resolution");
+  const accessDecision = field(formData, "access_decision");
+  const hatDecision = field(formData, "hat_decision");
+  const notes = field(formData, "notes");
+  const confirmed = field(formData, "confirm_review") === "yes";
+
+  if (
+    !uuidPattern.test(orderId) ||
+    refundAt.length > 64 ||
+    !Number.isFinite(Date.parse(refundAt)) ||
+    !["continue_order", "close_order"].includes(resolution) ||
+    !["retain", "removed_manually", "not_applicable"].includes(
+      accessDecision,
+    ) ||
+    !["hold", "release"].includes(hatDecision) ||
+    notes.length < 10 ||
+    notes.length > 2000 ||
+    !confirmed
+  ) {
+    redirect(returnUrl(formData, "error", "review_invalid"));
+  }
+
+  let errorCode: string | null = null;
+
+  try {
+    const { data, error } = await database.rpc(
+      "review_purchase_refund",
+      {
+        p_order_id: orderId,
+        p_actor_id: user.id,
+        p_expected_refund_at: refundAt,
+        p_resolution: resolution,
+        p_access_decision: accessDecision,
+        p_hat_decision: hatDecision,
+        p_notes: notes,
+        p_confirm: true,
+      },
+    );
+
+    if (error) {
+      switch (error.message) {
+        case "The refund record has changed. Refresh before reviewing.":
+          errorCode = "review_changed";
+          break;
+
+        case "Wait until the pending refund is resolved.":
+          errorCode = "review_pending";
+          break;
+
+        case "Archive the member and review active bookings before recording access as removed.":
+        case "The linked membership is not active.":
+        case "Record the linked membership decision.":
+        case "There is no linked membership to review.":
+          errorCode = "review_member";
+          break;
+
+        case "Delivery details require review.":
+          errorCode = "review_delivery";
+          break;
+
+        case "Gift details require further review.":
+          errorCode = "review_gift";
+          break;
+
+        case "Payment details require further review.":
+        case "This order needs fulfilment assistance before it can continue.":
+          errorCode = "review_support";
+          break;
+
+        case "Please complete the review details.":
+        case "Closing requires a full refund and no further hat dispatch.":
+        case "A fully refunded order cannot continue.":
+          errorCode = "review_invalid";
+          break;
+
+        default:
+          errorCode = "review_unknown";
+      }
+
+      console.error("Refund review could not be recorded.");
+    } else if (data !== orderId) {
+      errorCode = "review_unknown";
+    }
+  } catch {
+    errorCode = "review_unknown";
+    console.error("Refund review outcome is unavailable.");
+  }
+
+  revalidatePath("/admin/orders");
+
+  if (errorCode) {
+    redirect(returnUrl(formData, "error", errorCode));
+  }
+
+  redirect(returnUrl(formData, "saved", "reviewed"));
+}

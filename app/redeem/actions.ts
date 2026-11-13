@@ -132,23 +132,16 @@ async function prepareRedemption(formData: FormData) {
     return "gift";
   }
 
-  const { data: order, error: orderError } = await database
-    .from("purchase_orders")
-    .select("status, purchase_kind, stripe_environment, refunded_amount")
-    .eq("id", gift.order_id)
-    .maybeSingle();
+  const { data: eligible, error: eligibilityError } =
+    await database.rpc("gift_purchase_is_redeemable", {
+      p_order_id: gift.order_id,
+    });
 
-  if (orderError) {
+  if (eligibilityError) {
     return "unavailable";
   }
 
-  if (
-    !order ||
-    order.status !== "fulfilled" ||
-    order.purchase_kind !== "gift" ||
-    order.stripe_environment !== "sandbox" ||
-    order.refunded_amount !== 0
-  ) {
+  if (eligible !== true) {
     return "gift";
   }
 
@@ -195,7 +188,6 @@ export async function requestGiftRedemption(formData: FormData) {
     console.error("Gift verification could not be started.");
   }
 
-  // Redirect outside the try/catch: Next.js redirects throw.
   if (result === "verify") {
     redirect("/redeem?step=verify");
   }
@@ -214,7 +206,10 @@ async function completeRedemption(formData: FormData) {
     return "expired";
   }
 
-  const code = field(formData, "verificationCode").replace(/\s/g, "");
+  const code = field(
+    formData,
+    "verificationCode",
+  ).replace(/\s/g, "");
 
   if (!/^\d{6,10}$/.test(code)) {
     return "code";
@@ -230,8 +225,6 @@ async function completeRedemption(formData: FormData) {
     data: { user },
   } = await auth.auth.getUser();
 
-  // A matching, verified session also allows a safe retry
-  // if redemption failed after the OTP was consumed.
   const alreadyVerified =
     user?.email_confirmed_at &&
     user.email?.trim().toLowerCase() === pending.email;
@@ -277,7 +270,9 @@ async function completeRedemption(formData: FormData) {
   );
 
   if (error) {
-    if (error.message === "Existing membership requires assistance.") {
+    if (
+      error.message === "Existing membership requires assistance."
+    ) {
       return "membership";
     }
 
