@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -8,6 +7,7 @@ import { signOut } from "../app/admin/actions";
 const sections = [
   { href: "/admin", label: "Interest registrations" },
   { href: "/admin/members", label: "Members" },
+  { href: "/admin/orders", label: "Orders" },
   { href: "/admin/sessions", label: "Sessions" },
   { href: "/admin/bookings", label: "Bookings" },
   { href: "/admin/venues", label: "Venues" },

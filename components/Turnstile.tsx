@@ -1,4 +1,3 @@
-
 "use client";
 
 import Script from "next/script";
@@ -12,8 +11,11 @@ type TurnstileAPI = {
       action: string;
       theme: string;
       size: string;
+      "response-field": boolean;
+      callback: (token: string) => void;
       "error-callback": () => void;
-      callback: () => void;
+      "expired-callback": () => void;
+      "timeout-callback": () => void;
     },
   ) => string;
   remove: (widgetId: string) => void;
@@ -30,53 +32,85 @@ type TurnstileProps = {
     | "register_interest"
     | "venue_enquiry"
     | "facilitator_application"
-    | "member_login";
+    | "member_login"
+    | "purchase_checkout"
+    | "gift_redemption";
 };
 
 export default function Turnstile({
   action = "register_interest",
 }: TurnstileProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const widgetRef = useRef<string | null>(null);
+  const [scriptReady, setScriptReady] = useState(false);
+  const [token, setToken] = useState("");
   const [failed, setFailed] = useState(false);
 
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
-  function renderWidget() {
-    if (
-      !siteKey ||
-      !containerRef.current ||
-      !window.turnstile ||
-      widgetRef.current !== null
-    ) {
+  useEffect(() => {
+    const container = containerRef.current;
+    const api = window.turnstile;
+
+    if (!siteKey || !container || !api) {
       return;
     }
 
-    try {
-      widgetRef.current = window.turnstile.render(
-        containerRef.current,
-        {
-          sitekey: siteKey,
-          action,
-          theme: "light",
-          size: "flexible",
-          "error-callback": () => setFailed(true),
-          callback: () => setFailed(false),
-        },
-      );
-    } catch {
-      setFailed(true);
-    }
-  }
+    let active = true;
+    let widgetId: string | null = null;
 
-  useEffect(() => {
+    setToken("");
+    setFailed(false);
+
+    function invalidate() {
+      if (active) {
+        setToken("");
+      }
+    }
+
+    try {
+      widgetId = api.render(container, {
+        sitekey: siteKey,
+        action,
+        theme: "light",
+        size: "flexible",
+        "response-field": false,
+
+        callback: (value) => {
+          if (active) {
+            setToken(value);
+            setFailed(false);
+          }
+        },
+
+        "error-callback": () => {
+          if (active) {
+            setToken("");
+            setFailed(true);
+          }
+        },
+
+        "expired-callback": invalidate,
+        "timeout-callback": invalidate,
+      });
+    } catch {
+      if (active) {
+        setToken("");
+        setFailed(true);
+      }
+    }
+
     return () => {
-      if (widgetRef.current !== null && window.turnstile) {
-        window.turnstile.remove(widgetRef.current);
-        widgetRef.current = null;
+      active = false;
+
+      if (widgetId !== null) {
+        try {
+          api.remove(widgetId);
+        } catch {
+          // The widget may already have been removed.
+        }
       }
     };
-  }, []);
+  }, [action, siteKey, scriptReady]);
 
   if (!siteKey) {
     return (
@@ -93,23 +127,43 @@ export default function Turnstile({
         id="cloudflare-turnstile"
         src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
         strategy="afterInteractive"
-        onReady={renderWidget}
-        onError={() => setFailed(true)}
+        onReady={() => setScriptReady(true)}
+        onError={() => {
+          setToken("");
+          setFailed(true);
+        }}
       />
 
       <div ref={containerRef} />
 
-      {failed && (
+      <input
+        type="hidden"
+        name="cf-turnstile-response"
+        value={token}
+        readOnly
+      />
+
+      {failed ? (
         <p role="alert" className="text-sm text-[#9B3D24]">
-          The verification check couldn&apos;t load. Please refresh
-          the page and try again.
+          The verification check couldn&apos;t load.
+          Please refresh the page and try again.
+        </p>
+      ) : (
+        <p
+          role="status"
+          aria-live="polite"
+          className="text-xs text-[#52645A]"
+        >
+          {token
+            ? "Verification complete."
+            : "Waiting for the verification check…"}
         </p>
       )}
 
       <noscript>
         <p className="text-sm text-[#9B3D24]">
-          Please enable JavaScript to complete the verification, or
-          email hello@thedadclub.com.au with your enquiry.
+          Please enable JavaScript to complete the verification,
+          or email hello@thedadclub.com.au.
         </p>
       </noscript>
 
