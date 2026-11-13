@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { requireAdmin } from "../lib/admin";
 import { displaySessionDate } from "../lib/programSessions";
+import OrderDispatchForm from "./OrderDispatchForm";
 
 export type OrderSearchParams = Promise<{
   status?: string | string[];
   kind?: string | string[];
   environment?: string | string[];
   page?: string | string[];
+  saved?: string | string[];
+  error?: string | string[];
+  order?: string | string[];
 }>;
 
 type Order = {
@@ -20,12 +24,14 @@ type Order = {
   expected_amount: number;
   paid_amount: number | null;
   refunded_amount: number;
+  refund_review_required: boolean;
   status: string;
   paid_at: string | null;
   fulfilled_at: string | null;
   member_id: string | null;
   hat_status: string;
   hat_dispatched_at: string | null;
+  hat_tracking_reference: string | null;
   shipping_details: unknown;
   review_code: string | null;
   stripe_checkout_session_id: string | null;
@@ -58,6 +64,17 @@ const kinds = [
   ["gift", "Gift"],
   ["hat", "Standalone hat"],
 ] as const;
+
+const dispatchErrors: Record<string, string> = {
+  invalid: "Please check the dispatch details and confirmation box.",
+  changed:
+    "This hat is no longer ready for dispatch. Check its current status and any refund review.",
+  address: "Delivery details need checking before dispatch.",
+  gift: "This gift must be redeemed before its hat can be dispatched.",
+  access: "Administrator access could not be verified.",
+  unknown:
+    "We couldn't confirm the dispatch result. Check the current hat status before trying again.",
+};
 
 const pageSize = 20;
 
@@ -182,6 +199,8 @@ export default async function PurchaseOrders({
   const rawKind = scalar(params.kind);
   const rawEnvironment = scalar(params.environment);
   const rawPage = scalar(params.page);
+  const errorCode = scalar(params.error);
+  const selectedOrder = scalar(params.order);
 
   const status = statuses.some(([value]) => value === rawStatus)
     ? rawStatus
@@ -200,6 +219,15 @@ export default async function PurchaseOrders({
     ? Math.max(1, Math.min(10000, Number(rawPage)))
     : 1;
 
+  const dispatchError = Object.prototype.hasOwnProperty.call(
+    dispatchErrors,
+    errorCode,
+  )
+    ? dispatchErrors[errorCode]
+    : undefined;
+
+  const filters = { status, kind, environment, page };
+
   function listHref(nextPage: number) {
     const query = new URLSearchParams();
 
@@ -214,7 +242,7 @@ export default async function PurchaseOrders({
   let query = database
     .from("purchase_orders")
     .select(
-      "id, created_at, stripe_environment, package_code, purchase_kind, purchaser_name, purchaser_email, expected_amount, paid_amount, refunded_amount, status, paid_at, fulfilled_at, member_id, hat_status, hat_dispatched_at, shipping_details, review_code, stripe_checkout_session_id, stripe_payment_intent_id",
+      "id, created_at, stripe_environment, package_code, purchase_kind, purchaser_name, purchaser_email, expected_amount, paid_amount, refunded_amount, refund_review_required, status, paid_at, fulfilled_at, member_id, hat_status, hat_dispatched_at, hat_tracking_reference, shipping_details, review_code, stripe_checkout_session_id, stripe_payment_intent_id",
       { count: "exact" },
     );
 
@@ -240,6 +268,7 @@ export default async function PurchaseOrders({
 
   const emails = new Map<string, EmailRecord>();
   const gifts = new Map<string, GiftRecord>();
+
   let relatedDetailsUnavailable = false;
 
   if (orderIds.length > 0) {
@@ -302,20 +331,32 @@ export default async function PurchaseOrders({
         >
           <label className="text-sm font-bold">
             Order status
-            <select name="status" defaultValue={status} className={selectClass}>
+            <select
+              name="status"
+              defaultValue={status}
+              className={selectClass}
+            >
               <option value="">All statuses</option>
               {statuses.map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
+                <option key={value} value={value}>
+                  {label}
+                </option>
               ))}
             </select>
           </label>
 
           <label className="text-sm font-bold">
             Purchase type
-            <select name="kind" defaultValue={kind} className={selectClass}>
+            <select
+              name="kind"
+              defaultValue={kind}
+              className={selectClass}
+            >
               <option value="">All types</option>
               {kinds.map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
+                <option key={value} value={value}>
+                  {label}
+                </option>
               ))}
             </select>
           </label>
@@ -346,6 +387,15 @@ export default async function PurchaseOrders({
           All times use Australian Central time.
         </p>
 
+        {dispatchError && (
+          <p
+            role="alert"
+            className="mt-5 rounded-2xl bg-[#C96632]/10 p-5 text-sm leading-relaxed"
+          >
+            {dispatchError}
+          </p>
+        )}
+
         {relatedDetailsUnavailable && (
           <p
             role="alert"
@@ -368,16 +418,34 @@ export default async function PurchaseOrders({
             const gift = gifts.get(order.id);
             const address = deliveryAddress(order.shipping_details);
 
+            const canDispatch =
+              order.status === "fulfilled" &&
+              !order.refund_review_required &&
+              order.refunded_amount === 0 &&
+              order.hat_status === "ready" &&
+              Boolean(address) &&
+              !relatedDetailsUnavailable &&
+              (order.purchase_kind !== "gift" ||
+                gift?.status === "redeemed");
+
+            const dispatchConfirmed =
+              params.saved === "dispatched" &&
+              selectedOrder === order.id &&
+              order.hat_status === "dispatched";
+
             return (
               <article
                 key={order.id}
-                className="rounded-[24px] border border-[#173A2C]/15 bg-[#FBF8F0] p-6 sm:p-8"
+                id={`order-${order.id}`}
+                className="scroll-mt-6 rounded-[24px] border border-[#173A2C]/15 bg-[#FBF8F0] p-6 sm:p-8"
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <p className="text-xs font-extrabold uppercase tracking-wide text-[#C96632]">
                       {order.stripe_environment} ·{" "}
-                      {kinds.find(([value]) => value === order.purchase_kind)?.[1]}
+                      {kinds.find(
+                        ([value]) => value === order.purchase_kind,
+                      )?.[1]}
                     </p>
 
                     <h2 className="mt-3 text-2xl font-black">
@@ -396,22 +464,38 @@ export default async function PurchaseOrders({
                         : "bg-[#E8EBDD]"
                     }`}
                   >
-                    {statuses.find(([value]) => value === order.status)?.[1] ??
-                      order.status}
+                    {statuses.find(
+                      ([value]) => value === order.status,
+                    )?.[1] ?? order.status}
                   </span>
                 </div>
 
+                {dispatchConfirmed && (
+                  <p
+                    role="status"
+                    className="mt-5 rounded-2xl bg-[#E8EBDD] p-4 text-sm font-bold"
+                  >
+                    Hat dispatch recorded.
+                  </p>
+                )}
+
                 <div className="mt-6 grid gap-6 md:grid-cols-3">
                   <div>
-                    <h3 className="text-sm font-extrabold">Purchaser</h3>
-                    <p className="mt-2 break-words">{order.purchaser_name}</p>
+                    <h3 className="text-sm font-extrabold">
+                      Purchaser
+                    </h3>
+                    <p className="mt-2 break-words">
+                      {order.purchaser_name}
+                    </p>
                     <p className="mt-1 break-all text-sm text-[#52645A]">
                       {order.purchaser_email}
                     </p>
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-extrabold">Payment</h3>
+                    <h3 className="text-sm font-extrabold">
+                      Payment
+                    </h3>
                     <p className="mt-2 text-sm">
                       Expected: {money(order.expected_amount)}
                     </p>
@@ -421,14 +505,30 @@ export default async function PurchaseOrders({
                     <p className="mt-1 text-sm">
                       Recorded refunded: {money(order.refunded_amount)}
                     </p>
+
+                    {order.refund_review_required && (
+                      <p className="mt-2 text-sm font-bold text-[#9B3D24]">
+                        Refund follow-up required
+                      </p>
+                    )}
                   </div>
 
                   <div>
                     <h3 className="text-sm font-extrabold">Hat</h3>
-                    <p className="mt-2 text-sm">{hatLabel(order.hat_status)}</p>
+                    <p className="mt-2 text-sm">
+                      {hatLabel(order.hat_status)}
+                    </p>
+
                     {order.hat_dispatched_at && (
                       <p className="mt-1 text-sm text-[#52645A]">
                         Dispatched {when(order.hat_dispatched_at)}
+                      </p>
+                    )}
+
+                    {order.hat_tracking_reference && (
+                      <p className="mt-2 break-words text-sm text-[#52645A]">
+                        Tracking / delivery note:{" "}
+                        {order.hat_tracking_reference}
                       </p>
                     )}
                   </div>
@@ -473,7 +573,8 @@ export default async function PurchaseOrders({
 
                   {order.review_code && (
                     <p className="mt-3 font-bold text-[#9B3D24]">
-                      Review reason: {order.review_code.replaceAll("_", " ")}
+                      Review reason:{" "}
+                      {order.review_code.replaceAll("_", " ")}
                     </p>
                   )}
                 </div>
@@ -485,7 +586,9 @@ export default async function PurchaseOrders({
 
                   <div className="mt-3 grid gap-6 border-t border-[#173A2C]/15 pt-5 md:grid-cols-2">
                     <div>
-                      <h3 className="text-sm font-extrabold">Delivery address</h3>
+                      <h3 className="text-sm font-extrabold">
+                        Delivery address
+                      </h3>
                       <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-[#52645A]">
                         {address ||
                           (order.purchase_kind === "gift"
@@ -512,6 +615,13 @@ export default async function PurchaseOrders({
                     </dl>
                   </div>
                 </details>
+
+                {canDispatch && (
+                  <OrderDispatchForm
+                    orderId={order.id}
+                    filters={filters}
+                  />
+                )}
               </article>
             );
           })}
@@ -525,7 +635,9 @@ export default async function PurchaseOrders({
             <Link href={listHref(page - 1)} prefetch={false}>
               ← Previous
             </Link>
-          ) : <span />}
+          ) : (
+            <span />
+          )}
 
           <p>Page {page} of {totalPages}</p>
 
@@ -533,13 +645,16 @@ export default async function PurchaseOrders({
             <Link href={listHref(page + 1)} prefetch={false}>
               Next →
             </Link>
-          ) : <span />}
+          ) : (
+            <span />
+          )}
         </nav>
 
         <p className="mt-8 border-t border-[#173A2C]/15 pt-6 text-xs leading-relaxed text-[#52645A]">
-          This view displays recorded website data.
-          Refund notification handling is still being connected;
-          check Stripe directly for the current refund position.
+          Recorded refunded amounts include successful refunds.
+          Refunds flagged for review do not automatically cancel
+          existing memberships or bookings. Check Stripe and the
+          linked member before deciding what action is needed.
           Email and gift codes are not resent from this page.
         </p>
       </div>
