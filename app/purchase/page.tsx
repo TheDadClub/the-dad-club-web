@@ -20,6 +20,8 @@ export const metadata: Metadata = {
 type SearchParams = Promise<{
   status?: string | string[];
   cancelled?: string | string[];
+  product?: string | string[];
+  kind?: string | string[];
 }>;
 
 async function PurchaseContent({
@@ -37,6 +39,20 @@ async function PurchaseContent({
       : typeof params.status === "string"
         ? params.status
         : undefined;
+
+  const initialProduct =
+    params.product === "before_baby" ||
+    params.product === "after_baby" ||
+    params.product === "hat"
+      ? params.product
+      : null;
+
+  const initialKind =
+    initialProduct !== null &&
+    initialProduct !== "hat" &&
+    params.kind === "gift"
+      ? "gift"
+      : "self";
 
   const prices = {
     before_baby: purchasePackages.before_baby.amount,
@@ -77,9 +93,12 @@ async function PurchaseContent({
 
       <div className="mt-10 md:mt-12">
         <PurchaseForm
+          key={`${initialProduct ?? "none"}:${initialKind}`}
           enabled={isStripeCheckoutEnabled()}
           status={status}
           prices={prices}
+          initialProduct={initialProduct}
+          initialKind={initialKind}
         />
       </div>
 

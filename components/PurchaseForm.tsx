@@ -34,14 +34,22 @@ export default function PurchaseForm({
   enabled,
   status,
   prices,
+  initialProduct = null,
+  initialKind = "self",
 }: {
   enabled: boolean;
   status?: string;
   prices: PurchasePrices;
+  initialProduct?: PurchaseProduct | null;
+  initialKind?: "self" | "gift";
 }) {
   const [product, setProduct] =
-    useState<PurchaseProduct | null>(null);
-  const [kind, setKind] = useState<"self" | "gift">("self");
+    useState<PurchaseProduct | null>(initialProduct);
+
+  const [kind, setKind] = useState<"self" | "gift">(
+    initialProduct === "hat" ? "self" : initialKind,
+  );
+
   const detailsRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
 

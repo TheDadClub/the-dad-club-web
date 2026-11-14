@@ -3,6 +3,7 @@ import Link from "next/link";
 const exploreLinks = [
   { href: "/#about", label: "About" },
   { href: "/#program", label: "The program" },
+  { href: "/gift", label: "Gift a dad" },
   { href: "/app", label: "The app" },
   { href: "/faq", label: "FAQs" },
   { href: "/join", label: "Register interest" },
@@ -16,6 +17,11 @@ const involvementLinks = [
 const accountLinks = [
   { href: "/members/login", label: "Member login" },
   { href: "/admin/login", label: "Admin login" },
+];
+
+const legalLinks = [
+  { href: "/purchase/terms", label: "Purchase & Gift Terms" },
+  { href: "/privacy", label: "Privacy Policy" },
 ];
 
 const linkClass =
@@ -102,12 +108,20 @@ export default function SiteFooter() {
             Real dads. Real conversations. No perfect answers.
           </p>
 
-          <Link
-            href="/privacy"
-            className="inline-flex min-h-11 items-center self-start text-xs font-semibold text-[#52645A] hover:text-[#C96632] sm:self-auto"
+          <nav
+            aria-label="Legal information"
+            className="flex flex-wrap gap-x-6 gap-y-1"
           >
-            Privacy Policy
-          </Link>
+            {legalLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="inline-flex min-h-11 items-center text-xs font-semibold text-[#52645A] transition hover:text-[#C96632] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C96632]"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
         </div>
       </div>
     </footer>
