@@ -29,12 +29,21 @@ export function buildPurchaseConfirmationEmail(
   details: PurchaseConfirmationDetails,
   from: string,
 ) {
+  if (
+    !Object.prototype.hasOwnProperty.call(
+      purchasePackages,
+      details.packageCode,
+    )
+  ) {
+    throw new Error("Invalid purchase email details.");
+  }
+
   const selected = purchasePackages[details.packageCode];
   const isGift = details.purchaseKind === "gift";
   const isHat = details.purchaseKind === "hat";
 
   if (
-    !selected ||
+    !["self", "gift", "hat"].includes(details.purchaseKind) ||
     (isHat && details.packageCode !== "hat") ||
     (!isHat && details.packageCode === "hat") ||
     (isGift && !details.giftCode)
@@ -51,9 +60,9 @@ export function buildPurchaseConfirmationEmail(
 
   const included =
     details.packageCode === "before_baby"
-      ? "Five sessions: The Beginning, Getting Ready, Finding Your Feet, Adjusting and The Next Chapter. Includes one Dad Club hat."
+      ? "Five sessions: The Beginning, Getting Ready, Finding Your Feet, Adjusting and The Next Chapter. Includes one Dad Club hat and standard Australian delivery."
       : details.packageCode === "after_baby"
-        ? "Three sessions: Finding Your Feet, Adjusting and The Next Chapter. Includes one Dad Club hat."
+        ? "Three sessions: Finding Your Feet, Adjusting and The Next Chapter. Includes one Dad Club hat and standard Australian delivery."
         : "One forest-green Dad Club cap with an orange arrow. Standard delivery within Australia is included.";
 
   const amount = new Intl.NumberFormat("en-AU", {
@@ -78,33 +87,55 @@ export function buildPurchaseConfirmationEmail(
     details.siteUrl,
   ).toString();
 
+  const termsUrl = new URL(
+    "/purchase/terms",
+    details.siteUrl,
+  ).toString();
+
+  const privacyUrl = new URL(
+    "/privacy/website",
+    details.siteUrl,
+  ).toString();
+
   const actionLabel = isGift
     ? "REDEEM A GIFT →"
     : "SIGN IN & CHOOSE YOUR DATES →";
 
   const instructions = isGift
     ? [
-        "Give this certificate and its code to the dad when you're ready. We have not contacted him.",
-        "He can redeem the gift using his own email address. He will provide his delivery address for the included hat during redemption.",
-        "After redemption, he chooses available published session dates. Online and face-to-face sessions have the same package price.",
-        "This gift does not reserve specific dates or places. Session bookings are confirmed separately.",
+        "Give this certificate and its code to the dad when you're ready. We have not contacted him. The certificate has no expiry date and can be redeemed once for the stated package.",
+        "He can redeem using his own email address, with no additional redemption payment. He provides his own Australian delivery address for the included hat.",
+        "After redemption, he chooses suitable available published session dates. Online and face-to-face sessions have the same package price. The gift does not reserve specific dates or places.",
+        "The included hat is dispatched within two business days after successful redemption and receipt of complete delivery details. Delivery takes additional time.",
       ]
     : isHat
       ? [
-          "Your hat will be sent to the delivery address supplied at checkout.",
+          "Your hat will be sent to the Australian delivery address supplied at checkout.",
+          "We dispatch within two business days of purchase after successful payment and receipt of complete delivery details. Delivery takes additional time.",
           "This purchase is for the hat only and does not include program membership or session bookings.",
         ]
       : [
           "Sign in using the email address you supplied for this purchase. We'll send you a verification code.",
           "Choose suitable published dates in your member area, subject to available places. You can choose online or face-to-face sessions.",
           "Your purchase does not reserve specific dates. You will receive a separate confirmation for each session you book.",
-          "Your included hat will be sent to the delivery address supplied at checkout.",
+          "Your included hat is dispatched within two business days of purchase after successful payment and receipt of complete delivery details. It will be sent to the Australian delivery address supplied at checkout. Delivery takes additional time.",
         ];
+
+  instructions.push(
+    "Business days are Monday to Friday, excluding public holidays in South Australia. If we cannot meet the dispatch timeframe, we will contact you to explain the delay and discuss your options.",
+  );
+
+  if (!isHat) {
+    instructions.push(
+      "Each session date needs at least six booked dads to go ahead. If we cancel because numbers are too low, the member can choose another suitable date or request a refund for the affected unused session.",
+    );
+  }
 
   const rows = [
     ["Purchase", packageName],
     ["Paid", `${amount} AUD`],
     ["Included", included],
+    ...(isGift ? [["Gift validity", "No expiry date"]] : []),
     ["Order reference", details.orderId],
   ];
 
@@ -118,7 +149,12 @@ export function buildPurchaseConfirmationEmail(
     ...rows.map(([label, value]) => `${label}: ${value}`),
     "",
     ...(isGift
-      ? ["GIFT REDEMPTION CODE", details.giftCode!, ""]
+      ? [
+          "GIFT REDEMPTION CODE",
+          details.giftCode!,
+          "No expiry date",
+          "",
+        ]
       : []),
     ...instructions.flatMap((paragraph) => [paragraph, ""]),
     ...(!isHat
@@ -127,6 +163,9 @@ export function buildPurchaseConfirmationEmail(
           "",
         ]
       : []),
+    `Purchase & Gift Terms: ${termsUrl}`,
+    `Website privacy notice: ${privacyUrl}`,
+    "",
     "Need a hand? Reply to this email.",
     "",
     "The Dad Club",
@@ -193,6 +232,9 @@ export function buildPurchaseConfirmationEmail(
                       <p style="margin:12px 0 0;font-family:monospace;font-size:20px;line-height:1.7;overflow-wrap:anywhere;">
                         ${escapeHtml(details.giftCode!)}
                       </p>
+                      <p style="margin:16px 0 0;font-size:16px;font-weight:bold;">
+                        No expiry date
+                      </p>
                     </div>
                   `
                   : ""
@@ -219,6 +261,16 @@ export function buildPurchaseConfirmationEmail(
                   `
                   : ""
               }
+
+              <p style="font-size:13px;line-height:1.8;color:#52645A;">
+                <a href="${escapeHtml(termsUrl)}" style="color:#173A2C;text-decoration:underline;">
+                  Purchase &amp; Gift Terms
+                </a>
+                <br />
+                <a href="${escapeHtml(privacyUrl)}" style="color:#173A2C;text-decoration:underline;">
+                  Website privacy notice
+                </a>
+              </p>
 
               <p style="font-size:16px;line-height:1.7;">
                 Need a hand? Reply to this email.
