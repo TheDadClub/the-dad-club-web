@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
+import { purchasePackages } from "../../lib/stripe";
 
 export const metadata: Metadata = {
   title: "The Dad Club Hat | See the arrow. Say hello.",
@@ -41,6 +42,12 @@ const meanings = [
   },
 ];
 
+const hatPrice = new Intl.NumberFormat("en-AU", {
+  style: "currency",
+  currency: "AUD",
+  maximumFractionDigits: 0,
+}).format(purchasePackages.hat.amount / 100);
+
 export default function HatPage() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#F4F0E5] text-[#173A2C]">
@@ -62,6 +69,67 @@ export default function HatPage() {
             A small sign that you&apos;re part of something.
             And a simple way to recognise another dad who is, too.
           </p>
+
+          <div className="mt-8 rounded-[24px] border border-[#173A2C]/15 bg-[#FBF8F0] p-6 sm:p-8">
+            <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
+              <div>
+                <p className="text-4xl font-black tracking-tight">
+                  {hatPrice}
+                  <span className="ml-2 text-sm font-bold">
+                    AUD
+                  </span>
+                </p>
+
+                <p className="mt-2 text-sm font-semibold text-[#52645A]">
+                  One hat. Standard Australian delivery included.
+                </p>
+              </div>
+
+              <Link
+                href="/purchase?product=hat#purchase-form"
+                className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-full bg-[#173A2C] px-6 py-4 text-sm font-extrabold text-[#F4F0E5] transition hover:bg-[#245540] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C96632]"
+              >
+                TRY HAT CHECKOUT →
+              </Link>
+            </div>
+
+            <div className="mt-6 border-t border-[#173A2C]/15 pt-5">
+              <p className="text-xs font-extrabold tracking-[0.14em] text-[#C96632]">
+                IN PRODUCTION · SANDBOX PREVIEW
+              </p>
+
+              <p className="mt-3 text-sm leading-relaxed text-[#52645A]">
+                Hats are currently in production. You can try
+                the sandbox checkout now; no real payment is
+                taken.
+              </p>
+
+              <p className="mt-3 text-sm leading-relaxed text-[#52645A]">
+                Once real purchases open, hats will be dispatched
+                within two business days of purchase after
+                successful payment and receipt of complete
+                delivery details. Delivery takes additional time.
+              </p>
+            </div>
+
+            <p className="mt-4 text-sm leading-relaxed text-[#52645A]">
+              Buying a program? Both Before Baby and After Baby
+              already include one hat.{" "}
+              <Link
+                href="/purchase"
+                className="font-bold text-[#173A2C] underline underline-offset-4 hover:text-[#C96632]"
+              >
+                Explore the packages →
+              </Link>
+            </p>
+
+            <Link
+              href="/purchase/terms"
+              className="mt-3 inline-flex min-h-11 items-center text-xs font-semibold underline underline-offset-4 hover:text-[#C96632] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C96632]"
+            >
+              Purchase &amp; Gift Terms →
+            </Link>
+          </div>
 
           <figure className="mt-10">
             <div className="relative aspect-[16/9] overflow-hidden rounded-[24px] bg-[#EEE7DB] sm:rounded-[32px]">
