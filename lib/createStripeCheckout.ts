@@ -3,6 +3,11 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { createAdminDatabase } from "./admin";
 import {
+  purchaseTermsSections,
+  purchaseTermsUpdated,
+  purchaseTermsVersion,
+} from "./purchaseTerms";
+import {
   getStripe,
   getStripePriceId,
   isStripeCheckoutEnabled,
@@ -17,6 +22,8 @@ type CheckoutDetails = {
   purchaseKind: PurchaseKind;
   name: string;
   email: string;
+  termsAccepted: boolean;
+  termsVersion: string;
 };
 
 export class CheckoutError extends Error {
@@ -24,6 +31,7 @@ export class CheckoutError extends Error {
     public readonly code:
       | "disabled"
       | "invalid"
+      | "terms"
       | "member_exists"
       | "unavailable",
   ) {
@@ -71,6 +79,15 @@ export async function createStripeCheckout(
     throw new CheckoutError("disabled");
   }
 
+  if (
+    details.termsAccepted !== true ||
+    details.termsVersion !== purchaseTermsVersion
+  ) {
+    throw new CheckoutError("terms");
+  }
+
+  const termsAcceptedAt = new Date().toISOString();
+
   const name = details.name.trim();
   const email = details.email.trim().toLowerCase();
 
@@ -84,16 +101,16 @@ export async function createStripeCheckout(
     name.length < 1 ||
     name.length > 100 ||
     email.length > 254 ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+    !Object.prototype.hasOwnProperty.call(
+      purchasePackages,
+      details.packageCode,
+    )
   ) {
     throw new CheckoutError("invalid");
   }
 
   const selectedPackage = purchasePackages[details.packageCode];
-
-  if (!selectedPackage) {
-    throw new CheckoutError("invalid");
-  }
 
   const baseUrl = checkoutBaseUrl();
   const stripe = getStripe();
@@ -144,6 +161,13 @@ export async function createStripeCheckout(
       purchaser_name: name,
       purchaser_email: email,
       stripe_price_id: priceId,
+      terms_version: purchaseTermsVersion,
+      terms_accepted_at: termsAcceptedAt,
+      terms_snapshot: {
+        version: purchaseTermsVersion,
+        lastUpdated: purchaseTermsUpdated,
+        sections: purchaseTermsSections,
+      },
     });
 
   if (orderError) {
@@ -184,6 +208,7 @@ export async function createStripeCheckout(
           order_id: orderId,
           package_code: details.packageCode,
           purchase_kind: details.purchaseKind,
+          terms_version: purchaseTermsVersion,
         },
         payment_intent_data: {
           metadata: {

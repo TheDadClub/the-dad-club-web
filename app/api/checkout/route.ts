@@ -4,6 +4,7 @@ import {
   createStripeCheckout,
   type PurchaseKind,
 } from "../../../lib/createStripeCheckout";
+import { purchaseTermsVersion } from "../../../lib/purchaseTerms";
 import {
   isStripeCheckoutEnabled,
   type PurchasePackage,
@@ -205,6 +206,8 @@ export async function POST(request: NextRequest) {
     "emailConfirmation",
     "website",
     "detailsConfirmed",
+    "termsAccepted",
+    "termsVersion",
     "cf-turnstile-response",
   ]);
 
@@ -245,6 +248,16 @@ export async function POST(request: NextRequest) {
     return redirectToForm(request, "invalid");
   }
 
+  const termsAccepted = field("termsAccepted") === "yes";
+  const termsVersion = field("termsVersion");
+
+  if (
+    !termsAccepted ||
+    termsVersion !== purchaseTermsVersion
+  ) {
+    return redirectToForm(request, "terms");
+  }
+
   const verified = await verifyTurnstile(
     field("cf-turnstile-response"),
     requestUrl.hostname,
@@ -259,6 +272,8 @@ export async function POST(request: NextRequest) {
       ...selections[selectionKey],
       name,
       email,
+      termsAccepted,
+      termsVersion,
     });
 
     const response = NextResponse.redirect(checkoutUrl, 303);
