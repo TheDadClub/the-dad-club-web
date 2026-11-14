@@ -26,6 +26,7 @@ type SearchParams = Promise<{
 const allowedErrors = new Set([
   "invalid",
   "verification",
+  "terms",
   "disabled",
   "expired",
   "code",
@@ -70,6 +71,7 @@ async function RedemptionContent({
         <p className="text-xs font-extrabold tracking-[0.16em] text-[#C96632]">
           SANDBOX PREVIEW
         </p>
+
         <p className="mt-2 text-sm leading-relaxed">
           This gift redemption flow is being tested with
           sandbox purchases.
@@ -118,7 +120,8 @@ async function RedemptionContent({
 
           <p className="mt-5 leading-relaxed text-[#D8E1D8]">
             Choose online or face-to-face sessions.
-            There&apos;s no additional redemption payment.
+            There&apos;s no additional redemption payment,
+            and your certificate has no expiry date.
           </p>
 
           <h3 className="mt-7 text-lg font-extrabold">
@@ -156,8 +159,13 @@ export default function RedeemPage({
 
       <Suspense
         fallback={
-          <main className="mx-auto max-w-6xl px-5 py-14 md:px-10">
-            <p className="font-bold">Loading gift redemption…</p>
+          <main
+            id="main-content"
+            className="mx-auto max-w-6xl px-5 py-14 md:px-10"
+          >
+            <p className="font-bold">
+              Loading gift redemption…
+            </p>
           </main>
         }
       >

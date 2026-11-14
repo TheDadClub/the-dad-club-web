@@ -7,6 +7,7 @@ import {
   randomBytes,
 } from "node:crypto";
 import { cookies } from "next/headers";
+import { purchaseTermsVersion } from "./purchaseTerms";
 
 const cookieName = "dad_club_gift_redemption";
 const lifetimeSeconds = 15 * 60;
@@ -28,6 +29,8 @@ export type PendingGiftRedemption = {
   name: string;
   email: string;
   shipping: GiftDelivery;
+  termsVersion: string;
+  termsAcceptedAt: string;
 };
 
 function encryptionKey() {
@@ -66,6 +69,28 @@ function validText(
   );
 }
 
+function validAcceptanceTime(value: unknown) {
+  if (typeof value !== "string" || value.length > 40) {
+    return false;
+  }
+
+  const timestamp = Date.parse(value);
+
+  if (
+    !Number.isFinite(timestamp) ||
+    new Date(timestamp).toISOString() !== value
+  ) {
+    return false;
+  }
+
+  const now = Date.now();
+
+  return (
+    timestamp <= now + 60_000 &&
+    timestamp >= now - lifetimeSeconds * 1000
+  );
+}
+
 function validDetails(
   value: unknown,
 ): value is PendingGiftRedemption {
@@ -91,7 +116,9 @@ function validDetails(
     ) &&
     typeof address.postal_code === "string" &&
     /^[0-9]{4}$/.test(address.postal_code) &&
-    address.country === "AU"
+    address.country === "AU" &&
+    details.termsVersion === purchaseTermsVersion &&
+    validAcceptanceTime(details.termsAcceptedAt)
   );
 }
 
@@ -102,15 +129,22 @@ export async function savePendingGiftRedemption(
     throw new Error("Invalid gift redemption details.");
   }
 
+  const expiresAt = Math.min(
+    Date.now() + lifetimeSeconds * 1000,
+    Date.parse(details.termsAcceptedAt) + lifetimeSeconds * 1000,
+  );
+
   const payload = Buffer.from(
     JSON.stringify({
-      expiresAt: Date.now() + lifetimeSeconds * 1000,
+      expiresAt,
       details,
     }),
     "utf8",
   );
 
   // Keep the encrypted value comfortably within cookie limits.
+  // The full terms snapshot is stored in the database at redemption,
+  // rather than placing the document in this cookie.
   if (payload.length > 2400) {
     throw new Error("Gift redemption details are too long.");
   }
@@ -141,7 +175,10 @@ export async function savePendingGiftRedemption(
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/redeem",
-    maxAge: lifetimeSeconds,
+    maxAge: Math.max(
+      1,
+      Math.floor((expiresAt - Date.now()) / 1000),
+    ),
   });
 }
 

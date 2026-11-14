@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Turnstile from "./Turnstile";
+import { purchaseTermsVersion } from "../lib/purchaseTerms";
 import {
   requestGiftRedemption,
   restartGiftRedemption,
@@ -15,9 +16,11 @@ const buttonClass =
 const errors: Record<string, string> = {
   invalid: "Please check the required details and try again.",
   verification: "Please complete the verification and try again.",
+  terms:
+    "Please review and agree to the current Purchase & Gift Terms before requesting your code. If you had this page open earlier, refresh it first.",
   disabled: "Gift redemption is not open yet.",
   expired:
-    "Your verification session has expired. Enter your gift and delivery details again to request a new email code.",
+    "Your verification session has expired or needs to be restarted. Enter your gift and delivery details again, review the current terms and request a new email code.",
   code:
     "We couldn't verify that email code. Check it and try again, or start again to request a new code.",
   gift:
@@ -61,7 +64,11 @@ export default function GiftRedemptionForm({
   error?: string;
   pendingEmail?: string;
 }) {
-  const errorMessage = error ? errors[error] : undefined;
+  const errorMessage =
+    error &&
+    Object.prototype.hasOwnProperty.call(errors, error)
+      ? errors[error]
+      : undefined;
 
   return (
     <section className="rounded-[28px] border border-[#173A2C]/15 bg-[#FBF8F0] p-6 sm:p-9">
@@ -90,7 +97,10 @@ export default function GiftRedemptionForm({
             junk folder too.
           </p>
 
-          <form action={verifyGiftRedemption} className="mt-7 space-y-6">
+          <form
+            action={verifyGiftRedemption}
+            className="mt-7 space-y-6"
+          >
             <div>
               <label
                 htmlFor="gift-email-code"
@@ -113,14 +123,23 @@ export default function GiftRedemptionForm({
               />
             </div>
 
+            <p className="text-sm leading-relaxed text-[#52645A]">
+              Verifying completes your gift redemption
+              using the details and terms you accepted
+              in the previous step.
+            </p>
+
             <Turnstile action="gift_redemption" />
 
             <button type="submit" className={buttonClass}>
-              VERIFY & REDEEM MY GIFT →
+              VERIFY &amp; REDEEM MY GIFT →
             </button>
           </form>
 
-          <form action={restartGiftRedemption} className="mt-5">
+          <form
+            action={restartGiftRedemption}
+            className="mt-5"
+          >
             <button
               type="submit"
               className="min-h-11 text-sm font-bold underline underline-offset-4"
@@ -141,11 +160,46 @@ export default function GiftRedemptionForm({
             your program access.
           </p>
 
-          <form action={requestGiftRedemption} className="mt-7 space-y-6">
+          <div className="mt-6 space-y-3 rounded-2xl bg-[#E8EBDD] p-5 text-sm leading-relaxed">
+            <p>
+              Your gift has no expiry date. Session dates
+              are chosen separately, subject to availability.
+              Each date needs six booked dads to go ahead.
+            </p>
+
+            <p>
+              If we cancel because numbers are too low,
+              choose another suitable date or request a
+              refund for the affected unused session.
+            </p>
+
+            <p>
+              Your hat is dispatched within two business
+              days after successful redemption and receipt
+              of complete delivery details. Standard
+              Australian delivery is included; delivery
+              takes additional time.
+            </p>
+          </div>
+
+          <form
+            action={requestGiftRedemption}
+            className="mt-7 space-y-6"
+          >
+            <input
+              type="hidden"
+              name="termsVersion"
+              value={purchaseTermsVersion}
+            />
+
             <div>
-              <label htmlFor="gift-code" className="text-sm font-bold">
+              <label
+                htmlFor="gift-code"
+                className="text-sm font-bold"
+              >
                 Gift certificate code
               </label>
+
               <input
                 id="gift-code"
                 name="giftCode"
@@ -160,9 +214,13 @@ export default function GiftRedemptionForm({
             </div>
 
             <div>
-              <label htmlFor="gift-name" className="text-sm font-bold">
+              <label
+                htmlFor="gift-name"
+                className="text-sm font-bold"
+              >
                 Your name
               </label>
+
               <input
                 id="gift-name"
                 name="name"
@@ -175,9 +233,13 @@ export default function GiftRedemptionForm({
             </div>
 
             <div>
-              <label htmlFor="gift-email" className="text-sm font-bold">
+              <label
+                htmlFor="gift-email"
+                className="text-sm font-bold"
+              >
                 Your email
               </label>
+
               <input
                 id="gift-email"
                 name="email"
@@ -196,6 +258,7 @@ export default function GiftRedemptionForm({
               >
                 Confirm your email
               </label>
+
               <input
                 id="gift-email-confirmation"
                 name="emailConfirmation"
@@ -225,6 +288,7 @@ export default function GiftRedemptionForm({
                   >
                     {item.label}
                   </label>
+
                   <input
                     id={`gift-${item.name}`}
                     name={item.name}
@@ -238,9 +302,13 @@ export default function GiftRedemptionForm({
               ))}
 
               <div>
-                <label htmlFor="gift-state" className="text-sm font-bold">
+                <label
+                  htmlFor="gift-state"
+                  className="text-sm font-bold"
+                >
                   State or territory
                 </label>
+
                 <select
                   id="gift-state"
                   name="state"
@@ -249,19 +317,29 @@ export default function GiftRedemptionForm({
                   required
                   className={inputClass}
                 >
-                  <option value="" disabled>Select a state</option>
-                  {["ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA"].map(
-                    (state) => (
-                      <option key={state} value={state}>{state}</option>
-                    ),
-                  )}
+                  <option value="" disabled>
+                    Select a state
+                  </option>
+
+                  {[
+                    "ACT", "NSW", "NT", "QLD",
+                    "SA", "TAS", "VIC", "WA",
+                  ].map((state) => (
+                    <option key={state} value={state}>
+                      {state}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               <div>
-                <label htmlFor="gift-postcode" className="text-sm font-bold">
+                <label
+                  htmlFor="gift-postcode"
+                  className="text-sm font-bold"
+                >
                   Postcode
                 </label>
+
                 <input
                   id="gift-postcode"
                   name="postcode"
@@ -277,7 +355,10 @@ export default function GiftRedemptionForm({
             </fieldset>
 
             <div hidden aria-hidden="true">
-              <label htmlFor="gift-website">Leave this field empty</label>
+              <label htmlFor="gift-website">
+                Leave this field empty
+              </label>
+
               <input
                 id="gift-website"
                 name="website"
@@ -287,7 +368,7 @@ export default function GiftRedemptionForm({
               />
             </div>
 
-            <label className="flex items-start gap-3">
+            <label className="flex cursor-pointer items-start gap-3">
               <input
                 name="detailsConfirmed"
                 type="checkbox"
@@ -295,6 +376,7 @@ export default function GiftRedemptionForm({
                 required
                 className="mt-1 size-5 shrink-0 accent-[#173A2C]"
               />
+
               <span className="text-sm leading-relaxed text-[#52645A]">
                 I am redeeming this gift for myself and have
                 checked my email and delivery address. I
@@ -303,14 +385,48 @@ export default function GiftRedemptionForm({
               </span>
             </label>
 
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                name="termsAccepted"
+                type="checkbox"
+                value="yes"
+                required
+                className="mt-1 size-5 shrink-0 accent-[#173A2C]"
+              />
+
+              <span className="text-sm leading-relaxed text-[#52645A]">
+                I have read and agree to the{" "}
+                <Link
+                  href="/purchase/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-[#173A2C] underline underline-offset-4 hover:text-[#C96632]"
+                >
+                  Purchase &amp; Gift Terms
+                  <span className="sr-only">
+                    {" "}(opens in a new tab)
+                  </span>
+                </Link>
+                , including the session minimum numbers
+                and hat dispatch arrangements.
+              </span>
+            </label>
+
             <p className="text-xs leading-relaxed text-[#52645A]">
               We use these details to activate your access
-              and arrange hat delivery. Read our{" "}
+              and arrange hat delivery. We also record your
+              terms acceptance and the wording that applied.
+              Read our{" "}
               <Link
                 href="/privacy/website"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="font-semibold underline underline-offset-4"
               >
                 website privacy notice
+                <span className="sr-only">
+                  {" "}(opens in a new tab)
+                </span>
               </Link>
               .
             </p>

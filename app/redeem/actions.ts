@@ -6,6 +6,11 @@ import { createAdminDatabase } from "../../lib/admin";
 import { createAuthClient } from "../../lib/supabase/server";
 import { hashGiftCode } from "../../lib/giftCodes";
 import {
+  purchaseTermsSections,
+  purchaseTermsUpdated,
+  purchaseTermsVersion,
+} from "../../lib/purchaseTerms";
+import {
   clearPendingGiftRedemption,
   readPendingGiftRedemption,
   savePendingGiftRedemption,
@@ -24,6 +29,7 @@ function field(formData: FormData, name: string) {
 async function verifiedForm(formData: FormData) {
   const secret = process.env.TURNSTILE_SECRET_KEY;
   const token = field(formData, "cf-turnstile-response");
+
   const origin = (await headers()).get("origin");
 
   if (!secret || !token || token.length > 2048 || !origin) {
@@ -77,6 +83,15 @@ async function prepareRedemption(formData: FormData) {
   if (process.env.GIFT_REDEMPTION_ENABLED !== "true") {
     return "disabled";
   }
+
+  if (
+    field(formData, "termsAccepted") !== "yes" ||
+    field(formData, "termsVersion") !== purchaseTermsVersion
+  ) {
+    return "terms";
+  }
+
+  const termsAcceptedAt = new Date().toISOString();
 
   const codeHash = hashGiftCode(field(formData, "giftCode"));
   const name = field(formData, "name");
@@ -149,6 +164,8 @@ async function prepareRedemption(formData: FormData) {
     codeHash,
     name,
     email,
+    termsVersion: purchaseTermsVersion,
+    termsAcceptedAt,
     shipping: {
       name,
       address: {
@@ -202,6 +219,8 @@ async function completeRedemption(formData: FormData) {
 
   const pending = await readPendingGiftRedemption();
 
+  // The encrypted pending details must contain a recent
+  // acceptance of the current terms version.
   if (!pending) {
     return "expired";
   }
@@ -266,6 +285,13 @@ async function completeRedemption(formData: FormData) {
       p_auth_user_id: user.id,
       p_name: pending.name,
       p_shipping_details: pending.shipping,
+      p_terms_version: pending.termsVersion,
+      p_terms_accepted_at: pending.termsAcceptedAt,
+      p_terms_snapshot: {
+        version: purchaseTermsVersion,
+        lastUpdated: purchaseTermsUpdated,
+        sections: purchaseTermsSections,
+      },
     },
   );
 
@@ -278,6 +304,14 @@ async function completeRedemption(formData: FormData) {
 
     if (error.message === "Gift is not available to redeem.") {
       return "gift";
+    }
+
+    if (
+      error.message ===
+      "Valid recipient terms acceptance required."
+    ) {
+      await clearPendingGiftRedemption();
+      return "expired";
     }
 
     console.error("Gift redemption could not be completed.");
