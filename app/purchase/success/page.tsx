@@ -5,6 +5,7 @@ import Link from "next/link";
 import SiteHeader from "../../../components/SiteHeader";
 import SiteFooter from "../../../components/SiteFooter";
 import { createAdminDatabase } from "../../../lib/admin";
+import { getStripeEnvironment } from "../../../lib/stripe";
 
 export const metadata: Metadata = {
   title: "Your Purchase | The Dad Club",
@@ -26,15 +27,22 @@ async function PurchaseResult({
 }) {
   await connection();
 
+  const environment = getStripeEnvironment();
+  const sandbox = environment === "sandbox";
+
   const params = await searchParams;
   const sessionId =
     typeof params.session_id === "string"
       ? params.session_id
       : "";
 
+  const referencePattern = sandbox
+    ? /^cs_test_[A-Za-z0-9]+$/
+    : /^cs_live_[A-Za-z0-9]+$/;
+
   const validReference =
     sessionId.length <= 255 &&
-    /^cs_test_[A-Za-z0-9]+$/.test(sessionId);
+    referencePattern.test(sessionId);
 
   let status = "unknown";
   let purchaseKind = "";
@@ -48,7 +56,7 @@ async function PurchaseResult({
         .from("purchase_orders")
         .select("id, status, purchase_kind")
         .eq("stripe_checkout_session_id", sessionId)
-        .eq("stripe_environment", "sandbox")
+        .eq("stripe_environment", environment)
         .maybeSingle();
 
       if (!error && order) {
@@ -92,7 +100,7 @@ async function PurchaseResult({
 
   const description = fulfilled
     ? purchaseKind === "gift"
-      ? "Your gift certificate has been prepared. Give it to the dad when you're ready; we haven't contacted him."
+      ? "Your gift certificate has been prepared. Give it to the dad when you're ready; we haven't contacted him. The certificate has no expiry date."
       : purchaseKind === "hat"
         ? "Your hat order has been recorded with the delivery details supplied at checkout."
         : "Your program access is ready. Sign in using your purchase email address, then choose available session dates."
@@ -102,7 +110,9 @@ async function PurchaseResult({
         ? "Contact us if you have questions about this order or any associated membership."
         : status === "expired"
           ? "This checkout is closed. If you believe you completed a payment, contact us before purchasing again."
-          : "Payment confirmation can take a moment. Check again shortly. Please don't make another payment while we confirm the result.";
+          : !validReference
+            ? "We couldn't identify this checkout. Check your purchase confirmation email or contact us before attempting another payment."
+            : "Payment confirmation can take a moment. Check again shortly. Please don't make another payment while we confirm the result.";
 
   const returnUrl = validReference
     ? `/purchase/success?${new URLSearchParams({
@@ -116,7 +126,9 @@ async function PurchaseResult({
       className="mx-auto max-w-3xl px-5 py-16 md:px-10 md:py-24"
     >
       <p className="text-xs font-extrabold tracking-[0.18em] text-[#C96632]">
-        SANDBOX PURCHASE — NO REAL PAYMENT
+        {sandbox
+          ? "SANDBOX PURCHASE — NO REAL PAYMENT"
+          : "YOUR DAD CLUB PURCHASE"}
       </p>
 
       <h1 className="mt-6 text-4xl font-black leading-tight tracking-tight md:text-5xl">
@@ -141,9 +153,9 @@ async function PurchaseResult({
         {fulfilled && purchaseKind === "self" && (
           <Link
             href="/members/login"
-            className="rounded-full bg-[#173A2C] px-7 py-4 text-sm font-extrabold text-[#F4F0E5] hover:bg-[#245540]"
+            className="rounded-full bg-[#173A2C] px-7 py-4 text-sm font-extrabold text-[#F4F0E5] hover:bg-[#245540] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C96632]"
           >
-            SIGN IN & CHOOSE YOUR DATES →
+            SIGN IN &amp; CHOOSE YOUR DATES →
           </Link>
         )}
 
@@ -151,7 +163,7 @@ async function PurchaseResult({
           validReference && (
             <a
               href={returnUrl}
-              className="rounded-full border border-[#173A2C]/30 px-7 py-4 text-sm font-extrabold hover:bg-[#E8EBDD]"
+              className="rounded-full border border-[#173A2C]/30 px-7 py-4 text-sm font-extrabold hover:bg-[#E8EBDD] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C96632]"
             >
               CHECK AGAIN →
             </a>
@@ -182,8 +194,13 @@ export default function PurchaseSuccessPage({
 
       <Suspense
         fallback={
-          <main className="mx-auto max-w-3xl px-5 py-16">
-            <p className="font-bold">Checking your purchase…</p>
+          <main
+            id="main-content"
+            className="mx-auto max-w-3xl px-5 py-16"
+          >
+            <p className="font-bold">
+              Checking your purchase…
+            </p>
           </main>
         }
       >

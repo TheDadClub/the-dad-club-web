@@ -1,6 +1,9 @@
 import type Stripe from "stripe";
 import { NextRequest, NextResponse } from "next/server";
-import { getStripe } from "../../../../lib/stripe";
+import {
+  assertStripeEnvironment,
+  getStripe,
+} from "../../../../lib/stripe";
 import { processStripeCheckout } from "../../../../lib/processStripeCheckout";
 import { processStripeRefund } from "../../../../lib/processStripeRefund";
 
@@ -110,13 +113,20 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (event.livemode) {
+  try {
+    assertStripeEnvironment(event.livemode);
+  } catch {
     return json(
-      { error: "Live payment processing is not enabled." },
+      {
+        error:
+          "Notification does not match the configured payment mode.",
+      },
       400,
     );
   }
 
+  // Continue processing existing payments and refunds even
+  // when starting new checkouts has been disabled.
   try {
     const result = event.type.startsWith("refund.")
       ? await processStripeRefund(event)

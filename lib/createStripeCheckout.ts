@@ -8,7 +8,9 @@ import {
   purchaseTermsVersion,
 } from "./purchaseTerms";
 import {
+  assertStripeEnvironment,
   getStripe,
+  getStripeEnvironment,
   getStripePriceId,
   isStripeCheckoutEnabled,
   purchasePackages,
@@ -59,6 +61,7 @@ function checkoutBaseUrl() {
 
   if (
     (!local && !production) ||
+    (getStripeEnvironment() === "live" && !production) ||
     url.username ||
     url.password ||
     url.pathname !== "/" ||
@@ -86,6 +89,7 @@ export async function createStripeCheckout(
     throw new CheckoutError("terms");
   }
 
+  const environment = getStripeEnvironment();
   const termsAcceptedAt = new Date().toISOString();
 
   const name = details.name.trim();
@@ -117,8 +121,9 @@ export async function createStripeCheckout(
   const priceId = getStripePriceId(details.packageCode);
   const price = await stripe.prices.retrieve(priceId);
 
+  assertStripeEnvironment(price.livemode);
+
   if (
-    price.livemode ||
     !price.active ||
     price.type !== "one_time" ||
     price.currency !== "aud" ||
@@ -153,7 +158,7 @@ export async function createStripeCheckout(
     .from("purchase_orders")
     .insert({
       id: orderId,
-      stripe_environment: "sandbox",
+      stripe_environment: environment,
       package_code: details.packageCode,
       purchase_kind: details.purchaseKind,
       currency: "aud",
@@ -209,6 +214,7 @@ export async function createStripeCheckout(
           package_code: details.packageCode,
           purchase_kind: details.purchaseKind,
           terms_version: purchaseTermsVersion,
+          stripe_environment: environment,
         },
         payment_intent_data: {
           metadata: {
@@ -226,8 +232,9 @@ export async function createStripeCheckout(
       },
     );
 
+    assertStripeEnvironment(session.livemode);
+
     if (
-      session.livemode ||
       !session.url ||
       session.amount_total !== selectedPackage.amount ||
       session.currency !== "aud"

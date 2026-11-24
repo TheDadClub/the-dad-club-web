@@ -4,7 +4,10 @@ import type Stripe from "stripe";
 import { createAdminDatabase } from "./admin";
 import { fulfilPaidPurchase } from "./fulfilPurchase";
 import { sendPurchaseConfirmation } from "./sendPurchaseConfirmation";
-import { getStripe } from "./stripe";
+import {
+  assertStripeEnvironment,
+  getStripe,
+} from "./stripe";
 
 type ProcessingResult =
   | "ignored"
@@ -67,9 +70,7 @@ export async function processStripeCheckout(
     return "ignored";
   }
 
-  if (event.livemode) {
-    throw new Error("Live payments are not enabled.");
-  }
+  assertStripeEnvironment(event.livemode);
 
   const notification = event.data.object;
 
@@ -86,8 +87,10 @@ export async function processStripeCheckout(
     notification.id,
   );
 
-  if (session.livemode || session.mode !== "payment") {
-    throw new Error("Unexpected checkout environment or mode.");
+  assertStripeEnvironment(session.livemode);
+
+  if (session.mode !== "payment") {
+    throw new Error("Unexpected checkout mode.");
   }
 
   const orderId = session.metadata?.order_id;
@@ -141,8 +144,9 @@ export async function processStripeCheckout(
     paymentIntentId,
   );
 
+  assertStripeEnvironment(payment.livemode);
+
   if (
-    payment.livemode ||
     payment.status !== "succeeded" ||
     payment.amount_received !== session.amount_total ||
     payment.currency !== session.currency ||

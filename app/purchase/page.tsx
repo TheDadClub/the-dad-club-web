@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
 import PurchaseForm from "../../components/PurchaseForm";
+import PurchaseModeNotice from "../../components/PurchaseModeNotice";
 import {
   isStripeCheckoutEnabled,
   purchasePackages,
@@ -65,16 +66,7 @@ async function PurchaseContent({
       id="main-content"
       className="mx-auto max-w-6xl px-5 py-12 md:px-10 md:py-16"
     >
-      <div className="rounded-2xl border border-[#C96632]/30 bg-[#E8EBDD] p-5">
-        <p className="text-xs font-extrabold tracking-[0.16em] text-[#C96632]">
-          SANDBOX PREVIEW
-        </p>
-
-        <p className="mt-2 text-sm leading-relaxed">
-          This is a test checkout. No real money is
-          charged. Confirmation emails may still be sent.
-        </p>
-      </div>
+      <PurchaseModeNotice />
 
       <header className="mt-10">
         <p className="text-xs font-extrabold tracking-[0.2em] text-[#C96632]">

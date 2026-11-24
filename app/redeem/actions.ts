@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createAdminDatabase } from "../../lib/admin";
 import { createAuthClient } from "../../lib/supabase/server";
 import { hashGiftCode } from "../../lib/giftCodes";
+import { getStripeEnvironment } from "../../lib/stripe";
 import {
   purchaseTermsSections,
   purchaseTermsUpdated,
@@ -29,7 +30,6 @@ function field(formData: FormData, name: string) {
 async function verifiedForm(formData: FormData) {
   const secret = process.env.TURNSTILE_SECRET_KEY;
   const token = field(formData, "cf-turnstile-response");
-
   const origin = (await headers()).get("origin");
 
   if (!secret || !token || token.length > 2048 || !origin) {
@@ -41,7 +41,13 @@ async function verifiedForm(formData: FormData) {
       process.env.STRIPE_CHECKOUT_BASE_URL ?? "",
     );
 
-    if (origin !== configured.origin) {
+    if (
+      origin !== configured.origin ||
+      (
+        getStripeEnvironment() === "live" &&
+        configured.origin !== "https://thedadclub.com.au"
+      )
+    ) {
       return false;
     }
 
@@ -83,6 +89,8 @@ async function prepareRedemption(formData: FormData) {
   if (process.env.GIFT_REDEMPTION_ENABLED !== "true") {
     return "disabled";
   }
+
+  const environment = getStripeEnvironment();
 
   if (
     field(formData, "termsAccepted") !== "yes" ||
@@ -147,6 +155,21 @@ async function prepareRedemption(formData: FormData) {
     return "gift";
   }
 
+  const { data: order, error: orderError } = await database
+    .from("purchase_orders")
+    .select("id")
+    .eq("id", gift.order_id)
+    .eq("stripe_environment", environment)
+    .maybeSingle();
+
+  if (orderError) {
+    return "unavailable";
+  }
+
+  if (!order) {
+    return "gift";
+  }
+
   const { data: eligible, error: eligibilityError } =
     await database.rpc("gift_purchase_is_redeemable", {
       p_order_id: gift.order_id,
@@ -166,6 +189,7 @@ async function prepareRedemption(formData: FormData) {
     email,
     termsVersion: purchaseTermsVersion,
     termsAcceptedAt,
+    stripeEnvironment: environment,
     shipping: {
       name,
       address: {
@@ -217,10 +241,10 @@ async function completeRedemption(formData: FormData) {
     return "disabled";
   }
 
+  // Reading validates the cookie's expiry, accepted terms
+  // version and payment environment.
   const pending = await readPendingGiftRedemption();
 
-  // The encrypted pending details must contain a recent
-  // acceptance of the current terms version.
   if (!pending) {
     return "expired";
   }
@@ -292,6 +316,7 @@ async function completeRedemption(formData: FormData) {
         lastUpdated: purchaseTermsUpdated,
         sections: purchaseTermsSections,
       },
+      p_stripe_environment: pending.stripeEnvironment,
     },
   );
 

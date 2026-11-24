@@ -8,6 +8,10 @@ import {
 } from "node:crypto";
 import { cookies } from "next/headers";
 import { purchaseTermsVersion } from "./purchaseTerms";
+import {
+  getStripeEnvironment,
+  type StripeEnvironment,
+} from "./stripe";
 
 const cookieName = "dad_club_gift_redemption";
 const lifetimeSeconds = 15 * 60;
@@ -31,6 +35,7 @@ export type PendingGiftRedemption = {
   shipping: GiftDelivery;
   termsVersion: string;
   termsAcceptedAt: string;
+  stripeEnvironment: StripeEnvironment;
 };
 
 function encryptionKey() {
@@ -118,7 +123,8 @@ function validDetails(
     /^[0-9]{4}$/.test(address.postal_code) &&
     address.country === "AU" &&
     details.termsVersion === purchaseTermsVersion &&
-    validAcceptanceTime(details.termsAcceptedAt)
+    validAcceptanceTime(details.termsAcceptedAt) &&
+    details.stripeEnvironment === getStripeEnvironment()
   );
 }
 
@@ -143,8 +149,7 @@ export async function savePendingGiftRedemption(
   );
 
   // Keep the encrypted value comfortably within cookie limits.
-  // The full terms snapshot is stored in the database at redemption,
-  // rather than placing the document in this cookie.
+  // The full terms snapshot is stored in the database at redemption.
   if (payload.length > 2400) {
     throw new Error("Gift redemption details are too long.");
   }

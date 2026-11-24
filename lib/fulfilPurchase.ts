@@ -5,6 +5,7 @@ import {
   buildGiftCode,
   hashGiftCode,
 } from "./giftCodes";
+import { getStripeEnvironment } from "./stripe";
 
 export type PurchaseFulfilmentStatus =
   | "fulfilled"
@@ -14,6 +15,7 @@ export type PurchaseFulfilmentStatus =
 export async function fulfilPaidPurchase(
   orderId: string,
 ): Promise<PurchaseFulfilmentStatus> {
+  const environment = getStripeEnvironment();
   const database = createAdminDatabase();
 
   const { data: order, error: orderError } = await database
@@ -26,8 +28,10 @@ export async function fulfilPaidPurchase(
     throw new Error("Purchase could not be loaded.");
   }
 
-  if (order.stripe_environment !== "sandbox") {
-    throw new Error("Live fulfilment is not enabled.");
+  if (order.stripe_environment !== environment) {
+    throw new Error(
+      "Purchase does not match the configured payment mode.",
+    );
   }
 
   let giftCodeHash: string | null = null;
@@ -36,7 +40,7 @@ export async function fulfilPaidPurchase(
     order.purchase_kind === "gift" &&
     order.status === "paid"
   ) {
-    const code = buildGiftCode(orderId, "sandbox");
+    const code = buildGiftCode(orderId, environment);
     giftCodeHash = hashGiftCode(code);
 
     if (!giftCodeHash) {

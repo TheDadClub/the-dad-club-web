@@ -2,7 +2,10 @@ import "server-only";
 
 import type Stripe from "stripe";
 import { createAdminDatabase } from "./admin";
-import { getStripe } from "./stripe";
+import {
+  assertStripeEnvironment,
+  getStripe,
+} from "./stripe";
 
 type RefundResult = "ignored" | "recorded" | "review";
 
@@ -20,9 +23,7 @@ export async function processStripeRefund(
     return "ignored";
   }
 
-  if (event.livemode) {
-    throw new Error("Live refund processing is not enabled.");
-  }
+  assertStripeEnvironment(event.livemode);
 
   const notification = event.data.object;
 
@@ -47,6 +48,8 @@ export async function processStripeRefund(
 
   const charge = await stripe.charges.retrieve(chargeId);
 
+  assertStripeEnvironment(charge.livemode);
+
   const paymentIntentId =
     typeof charge.payment_intent === "string"
       ? charge.payment_intent
@@ -59,6 +62,8 @@ export async function processStripeRefund(
   const payment = await stripe.paymentIntents.retrieve(
     paymentIntentId,
   );
+
+  assertStripeEnvironment(payment.livemode);
 
   const orderId = payment.metadata.order_id;
 
@@ -82,8 +87,6 @@ export async function processStripeRefund(
       : payment.latest_charge?.id;
 
   if (
-    charge.livemode ||
-    payment.livemode ||
     !charge.paid ||
     !charge.captured ||
     payment.status !== "succeeded" ||

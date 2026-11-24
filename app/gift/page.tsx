@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
+import PurchaseModeNotice from "../../components/PurchaseModeNotice";
 import { purchasePackages } from "../../lib/stripe";
 
 export const metadata: Metadata = {
@@ -60,15 +61,7 @@ export default function GiftPage() {
         id="main-content"
         className="mx-auto max-w-6xl px-5 py-12 md:px-10 md:py-20"
       >
-        <div className="rounded-2xl border border-[#C96632]/30 bg-[#E8EBDD] p-5">
-          <p className="text-xs font-extrabold tracking-[0.16em] text-[#C96632]">
-            SANDBOX PREVIEW
-          </p>
-          <p className="mt-2 text-sm leading-relaxed">
-            Gift purchases are being tested. Checkout does
-            not take real payments.
-          </p>
-        </div>
+        <PurchaseModeNotice />
 
         <header className="mt-10">
           <p className="text-xs font-extrabold tracking-[0.2em] text-[#C96632]">

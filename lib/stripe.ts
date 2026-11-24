@@ -2,6 +2,8 @@ import "server-only";
 
 import Stripe from "stripe";
 
+export type StripeEnvironment = "sandbox" | "live";
+
 export type PurchasePackage =
   | "before_baby"
   | "after_baby"
@@ -28,7 +30,38 @@ export const purchasePackages = {
   },
 } as const;
 
-let stripeClient: Stripe | undefined;
+let cachedStripe:
+  | {
+      secret: string;
+      client: Stripe;
+    }
+  | undefined;
+
+export function getStripeEnvironment(): StripeEnvironment {
+  const configured = (
+    process.env.STRIPE_MODE ?? "sandbox"
+  ).trim();
+
+  if (configured === "sandbox" || configured === "live") {
+    return configured;
+  }
+
+  throw new Error(
+    "STRIPE_MODE must be sandbox or live.",
+  );
+}
+
+export function isStripeLiveMode() {
+  return getStripeEnvironment() === "live";
+}
+
+export function assertStripeEnvironment(livemode: boolean) {
+  if (livemode !== isStripeLiveMode()) {
+    throw new Error(
+      "Stripe data does not match the configured payment mode.",
+    );
+  }
+}
 
 export function isPurchasePackage(
   value: string,
@@ -44,24 +77,35 @@ export function isStripeCheckoutEnabled() {
 }
 
 export function getStripe() {
-  if (stripeClient) {
-    return stripeClient;
-  }
-
+  const environment = getStripeEnvironment();
   const secret = process.env.STRIPE_SECRET_KEY?.trim();
 
-  if (!secret || !secret.startsWith("sk_test_")) {
+  const requiredPrefix =
+    environment === "live" ? "sk_live_" : "sk_test_";
+
+  if (!secret || !secret.startsWith(requiredPrefix)) {
     throw new Error(
-      "A Stripe sandbox secret key is required.",
+      environment === "live"
+        ? "A Stripe live secret key is required for live mode."
+        : "A Stripe sandbox secret key is required for sandbox mode.",
     );
   }
 
-  stripeClient = new Stripe(secret, {
+  if (cachedStripe?.secret === secret) {
+    return cachedStripe.client;
+  }
+
+  const client = new Stripe(secret, {
     maxNetworkRetries: 2,
     timeout: 15_000,
   });
 
-  return stripeClient;
+  cachedStripe = {
+    secret,
+    client,
+  };
+
+  return client;
 }
 
 export function getStripePriceId(

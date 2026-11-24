@@ -6,7 +6,10 @@ import {
   hashGiftCode,
 } from "./giftCodes";
 import { buildPurchaseConfirmationEmail } from "./purchaseConfirmationEmail";
-import { isPurchasePackage } from "./stripe";
+import {
+  getStripeEnvironment,
+  isPurchasePackage,
+} from "./stripe";
 
 export type PurchaseEmailOutcome =
   | "accepted"
@@ -33,6 +36,7 @@ function emailSiteUrl() {
 
   if (
     (!local && !production) ||
+    (getStripeEnvironment() === "live" && !production) ||
     url.username ||
     url.password ||
     url.pathname !== "/" ||
@@ -48,7 +52,25 @@ function emailSiteUrl() {
 export async function sendPurchaseConfirmation(
   orderId: string,
 ): Promise<PurchaseEmailOutcome> {
+  const environment = getStripeEnvironment();
   const database = createAdminDatabase();
+
+  // Check the environment before changing any email state.
+  const { data: target, error: targetError } = await database
+    .from("purchase_orders")
+    .select("stripe_environment")
+    .eq("id", orderId)
+    .maybeSingle();
+
+  if (targetError || !target) {
+    throw new Error("Purchase email order unavailable.");
+  }
+
+  if (target.stripe_environment !== environment) {
+    throw new Error(
+      "Purchase email does not match the configured payment mode.",
+    );
+  }
 
   // Claim before sending. Another notification cannot
   // claim this same pending email.
@@ -118,6 +140,10 @@ export async function sendPurchaseConfirmation(
       return "not_confirmed";
     }
 
+    if (order.stripe_environment !== environment) {
+      return "not_confirmed";
+    }
+
     if (
       order.status !== "fulfilled" ||
       order.refunded_amount > 0
@@ -126,7 +152,6 @@ export async function sendPurchaseConfirmation(
     }
 
     if (
-      order.stripe_environment !== "sandbox" ||
       !isPurchasePackage(order.package_code) ||
       !["self", "gift", "hat"].includes(order.purchase_kind)
     ) {
@@ -159,7 +184,7 @@ export async function sendPurchaseConfirmation(
         return skip();
       }
 
-      giftCode = buildGiftCode(orderId, "sandbox");
+      giftCode = buildGiftCode(orderId, environment);
 
       if (
         gift.package_code !== order.package_code ||
@@ -222,11 +247,15 @@ export async function sendPurchaseConfirmation(
     // the message to the email provider.
     const { data: latest, error: latestError } = await database
       .from("purchase_orders")
-      .select("status, refunded_amount")
+      .select("status, refunded_amount, stripe_environment")
       .eq("id", orderId)
       .maybeSingle();
 
-    if (latestError || !latest) {
+    if (
+      latestError ||
+      !latest ||
+      latest.stripe_environment !== environment
+    ) {
       return "not_confirmed";
     }
 
