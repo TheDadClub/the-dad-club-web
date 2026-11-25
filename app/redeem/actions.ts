@@ -45,7 +45,7 @@ async function verifiedForm(formData: FormData) {
       origin !== configured.origin ||
       (
         getStripeEnvironment() === "live" &&
-        configured.origin !== "https://thedadclub.com.au"
+        configured.origin !== "https://www.thedadclub.com.au"
       )
     ) {
       return false;

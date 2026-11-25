@@ -89,23 +89,21 @@ export default function HatPage() {
                 href="/purchase?product=hat#purchase-form"
                 className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-full bg-[#173A2C] px-6 py-4 text-sm font-extrabold text-[#F4F0E5] transition hover:bg-[#245540] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C96632]"
               >
-                TRY HAT CHECKOUT →
+                BUY THE HAT →
               </Link>
             </div>
 
             <div className="mt-6 border-t border-[#173A2C]/15 pt-5">
               <p className="text-xs font-extrabold tracking-[0.14em] text-[#C96632]">
-                IN PRODUCTION · SANDBOX PREVIEW
+                DELIVERY
               </p>
 
               <p className="mt-3 text-sm leading-relaxed text-[#52645A]">
-                Hats are currently in production. You can try
-                the sandbox checkout now; no real payment is
-                taken.
+                Standard delivery within Australia is included.
               </p>
 
               <p className="mt-3 text-sm leading-relaxed text-[#52645A]">
-                Once real purchases open, hats will be dispatched
+                Hats will be dispatched
                 within two business days of purchase after
                 successful payment and receipt of complete
                 delivery details. Delivery takes additional time.

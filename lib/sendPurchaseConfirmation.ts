@@ -30,7 +30,7 @@ function emailSiteUrl() {
     url.protocol === "http:";
 
   const production =
-    url.hostname === "thedadclub.com.au" &&
+    url.hostname === "www.thedadclub.com.au" &&
     url.protocol === "https:" &&
     !url.port;
 

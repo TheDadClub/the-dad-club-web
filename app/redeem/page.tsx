@@ -5,7 +5,6 @@ import { connection } from "next/server";
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
 import GiftRedemptionForm from "../../components/GiftRedemptionForm";
-import PurchaseModeNotice from "../../components/PurchaseModeNotice";
 import { readPendingGiftRedemption } from "../../lib/pendingGiftRedemption";
 
 export const metadata: Metadata = {
@@ -68,7 +67,6 @@ async function RedemptionContent({
       id="main-content"
       className="mx-auto max-w-6xl px-5 py-14 md:px-10 md:py-20"
     >
-      <PurchaseModeNotice />
 
       <header className="mt-10">
         <p className="text-xs font-extrabold tracking-[0.2em] text-[#C96632]">

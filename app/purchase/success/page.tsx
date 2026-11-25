@@ -126,9 +126,7 @@ async function PurchaseResult({
       className="mx-auto max-w-3xl px-5 py-16 md:px-10 md:py-24"
     >
       <p className="text-xs font-extrabold tracking-[0.18em] text-[#C96632]">
-        {sandbox
-          ? "SANDBOX PURCHASE — NO REAL PAYMENT"
-          : "YOUR DAD CLUB PURCHASE"}
+        YOUR DAD CLUB PURCHASE
       </p>
 
       <h1 className="mt-6 text-4xl font-black leading-tight tracking-tight md:text-5xl">

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
-import PurchaseModeNotice from "../../components/PurchaseModeNotice";
 import { purchasePackages } from "../../lib/stripe";
 
 export const metadata: Metadata = {
@@ -61,7 +60,6 @@ export default function GiftPage() {
         id="main-content"
         className="mx-auto max-w-6xl px-5 py-12 md:px-10 md:py-20"
       >
-        <PurchaseModeNotice />
 
         <header className="mt-10">
           <p className="text-xs font-extrabold tracking-[0.2em] text-[#C96632]">
