@@ -80,13 +80,13 @@ export function getStripe() {
   const environment = getStripeEnvironment();
   const secret = process.env.STRIPE_SECRET_KEY?.trim();
 
-  const requiredPrefix =
-    environment === "live" ? "sk_live_" : "sk_test_";
+  const allowedPrefixes =
+    environment === "live" ? ["sk_live_", "rk_live_"] : ["sk_test_"];
 
-  if (!secret || !secret.startsWith(requiredPrefix)) {
+  if (!secret || !allowedPrefixes.some((prefix) => secret.startsWith(prefix))) {
     throw new Error(
       environment === "live"
-        ? "A Stripe live secret key is required for live mode."
+        ? "A Stripe live secret or restricted key is required for live mode."
         : "A Stripe sandbox secret key is required for sandbox mode.",
     );
   }
