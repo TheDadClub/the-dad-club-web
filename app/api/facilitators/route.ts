@@ -1,3 +1,4 @@
+
 import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
@@ -9,6 +10,7 @@ import {
   normaliseFacilitatorSource,
 } from "../../../lib/facilitatorApplications";
 import { sendFacilitatorConfirmation } from "../../../lib/sendFacilitatorConfirmation";
+import { processAdminNotification } from "../../../lib/processAdminNotification";
 
 type FormStatus = "success" | "invalid" | "verification" | "error";
 
@@ -232,7 +234,7 @@ export async function POST(request: NextRequest) {
 
   const applicationId = randomUUID();
 
-  // Save first. Email outcomes must never discard an application.
+  // Save the application before attempting either email.
   try {
     const { error } = await database
       .from("facilitator_applications")
@@ -258,7 +260,7 @@ export async function POST(request: NextRequest) {
       });
 
     if (error?.code === "23505") {
-      // Do not change existing applications or resend their email.
+      // Existing applications must not trigger additional emails.
       return redirectToForm(request, "success", source);
     }
 
@@ -278,49 +280,86 @@ export async function POST(request: NextRequest) {
     return redirectToForm(request, "error", source);
   }
 
-  const emailAccepted = await sendFacilitatorConfirmation({
-    applicationId,
-    email: values.email,
-  });
+  // Send the applicant acknowledgement and record its outcome.
+  async function processFacilitatorAcknowledgement() {
+    let emailAccepted = false;
 
-  // Only update email fields; recruitment review status is separate.
-  try {
-    const { data: recorded, error } = await database
-      .from("facilitator_applications")
-      .update({
-        acknowledgement_email_status: emailAccepted
-          ? "accepted"
-          : "not_confirmed",
-        acknowledgement_email_accepted_at: emailAccepted
-          ? new Date().toISOString()
-          : null,
-      })
-      .eq("id", applicationId)
-      .eq("acknowledgement_email_status", "pending")
-      .select("id")
-      .maybeSingle();
-
-    if (error) {
+    try {
+      emailAccepted = await sendFacilitatorConfirmation({
+        applicationId,
+        email: values.email,
+      });
+    } catch {
       console.error(
-        "Facilitator acknowledgement status update failed:",
-        error.code,
-      );
-    } else if (!recorded) {
-      console.error(
-        "Facilitator acknowledgement status: no pending application updated.",
+        "Facilitator application saved; acknowledgement outcome unavailable.",
       );
     }
-  } catch {
+
+    // Only update email fields.
+    // Recruitment review status remains separate.
+    try {
+      const { data: recorded, error } = await database
+        .from("facilitator_applications")
+        .update({
+          acknowledgement_email_status: emailAccepted
+            ? "accepted"
+            : "not_confirmed",
+          acknowledgement_email_accepted_at: emailAccepted
+            ? new Date().toISOString()
+            : null,
+        })
+        .eq("id", applicationId)
+        .eq("acknowledgement_email_status", "pending")
+        .select("id")
+        .maybeSingle();
+
+      if (error) {
+        console.error(
+          "Facilitator acknowledgement status update failed:",
+          error.code,
+        );
+      } else if (!recorded) {
+        console.error(
+          "Facilitator acknowledgement status: no pending application updated.",
+        );
+      }
+    } catch {
+      console.error(
+        "Facilitator acknowledgement status: database request failed.",
+      );
+    }
+
+    if (!emailAccepted) {
+      console.error(
+        "Facilitator application saved; confirmation email acceptance not confirmed.",
+      );
+    }
+  }
+
+  // Process both emails independently.
+  const emailResults = await Promise.allSettled([
+    processFacilitatorAcknowledgement(),
+
+    processAdminNotification({
+      database,
+      eventId: applicationId,
+      eventType: "facilitator_application",
+    }),
+  ]);
+
+  if (emailResults[0].status === "rejected") {
     console.error(
-      "Facilitator acknowledgement status: database request failed.",
+      "Facilitator acknowledgement processing failed.",
     );
   }
 
-  if (!emailAccepted) {
+  if (emailResults[1].status === "rejected") {
     console.error(
-      "Facilitator application saved; confirmation email acceptance not confirmed.",
+      "Facilitator admin notification processing failed.",
     );
   }
 
+  // Success confirms the application was saved,
+  // regardless of either email outcome.
   return redirectToForm(request, "success", source);
 }

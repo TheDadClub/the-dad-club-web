@@ -1,3 +1,4 @@
+
 import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
@@ -5,6 +6,9 @@ import {
   sendVenueAcknowledgement,
   type VenueAcknowledgementResult,
 } from "../../../lib/sendVenueAcknowledgement";
+import {
+  processAdminNotification,
+} from "../../../lib/processAdminNotification";
 
 type FormStatus =
   | "success"
@@ -283,7 +287,7 @@ export async function POST(request: NextRequest) {
 
   const enquiryId = randomUUID();
 
-  // Save before sending. Existing enquiries are not emailed.
+  // Save the enquiry before attempting either email.
   try {
     const { error } = await database
       .from("venue_partners")
@@ -322,53 +326,79 @@ export async function POST(request: NextRequest) {
     return redirectToForm(request, "error");
   }
 
-  let outcome: VenueAcknowledgementResult = {
-    status: "not_confirmed",
-  };
+  // Send the venue acknowledgement and record its outcome.
+  async function processVenueAcknowledgement() {
+    let outcome: VenueAcknowledgementResult = {
+      status: "not_confirmed",
+    };
 
-  try {
-    outcome = await sendVenueAcknowledgement({
-      enquiryId,
-      email: contactEmail,
-    });
-  } catch {
-    console.error(
-      "Venue saved; acknowledgement outcome unavailable.",
-    );
-  }
-
-  // Record the outcome without changing the partnership status.
-  // If recording fails, retain the enquiry and do not resend.
-  try {
-    const { data: recorded, error } = await database
-      .from("venue_partners")
-      .update({
-        acknowledgement_email_status: outcome.status,
-        acknowledgement_email_accepted_at:
-          outcome.status === "accepted"
-            ? outcome.acceptedAt
-            : null,
-        acknowledgement_email_provider_id:
-          outcome.status === "accepted"
-            ? outcome.providerId
-            : null,
-      })
-      .eq("id", enquiryId)
-      .eq("acknowledgement_email_status", "pending")
-      .select("id")
-      .maybeSingle();
-
-    if (error || !recorded) {
+    try {
+      outcome = await sendVenueAcknowledgement({
+        enquiryId,
+        email: contactEmail,
+      });
+    } catch {
       console.error(
-        "Venue acknowledgement status could not be recorded.",
+        "Venue saved; acknowledgement outcome unavailable.",
       );
     }
-  } catch {
+
+    try {
+      const { data: recorded, error } = await database
+        .from("venue_partners")
+        .update({
+          acknowledgement_email_status: outcome.status,
+          acknowledgement_email_accepted_at:
+            outcome.status === "accepted"
+              ? outcome.acceptedAt
+              : null,
+          acknowledgement_email_provider_id:
+            outcome.status === "accepted"
+              ? outcome.providerId
+              : null,
+        })
+        .eq("id", enquiryId)
+        .eq("acknowledgement_email_status", "pending")
+        .select("id")
+        .maybeSingle();
+
+      if (error || !recorded) {
+        console.error(
+          "Venue acknowledgement status could not be recorded.",
+        );
+      }
+    } catch {
+      console.error(
+        "Venue acknowledgement status update failed.",
+      );
+    }
+  }
+
+  // Process both emails independently.
+  // Neither email can invalidate a saved enquiry.
+  const emailResults = await Promise.allSettled([
+    processVenueAcknowledgement(),
+
+    processAdminNotification({
+      database,
+      eventId: enquiryId,
+      eventType: "venue_enquiry",
+    }),
+  ]);
+
+  if (emailResults[0].status === "rejected") {
     console.error(
-      "Venue acknowledgement status update failed.",
+      "Venue acknowledgement processing failed.",
     );
   }
 
-  // This confirms the enquiry was saved, not email delivery.
+  if (emailResults[1].status === "rejected") {
+    console.error(
+      "Venue admin notification processing failed.",
+    );
+  }
+
+  // Success confirms the enquiry was saved,
+  // not that either email reached its recipient.
   return redirectToForm(request, "success");
 }

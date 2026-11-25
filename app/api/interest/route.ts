@@ -1,7 +1,9 @@
+
 import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendInterestConfirmation } from "../../../lib/sendInterestConfirmation";
+import { processAdminNotification } from "../../../lib/processAdminNotification";
 
 const allowedStages = new Set([
   "Preparing for fatherhood",
@@ -150,7 +152,7 @@ export async function POST(request: NextRequest) {
 
   const registrationId = randomUUID();
 
-  // Save the registration before attempting email.
+  // Save the registration before attempting either email.
   try {
     const { error } = await supabase
       .from("interest_registrations")
@@ -167,7 +169,7 @@ export async function POST(request: NextRequest) {
       });
 
     if (error?.code === "23505") {
-      // Do not send another email or change an existing registration.
+      // Existing registrations must not trigger additional emails.
       return redirectToForm(request, "success");
     }
 
@@ -180,30 +182,85 @@ export async function POST(request: NextRequest) {
     return redirectToForm(request, "error");
   }
 
-  const emailAccepted = await sendInterestConfirmation({
-    registrationId,
-    email,
-  });
+  // Send the participant confirmation and record its outcome.
+  async function processInterestConfirmation(): Promise<boolean> {
+    let emailAccepted: boolean;
 
-  // "sent" means Resend accepted the email, not proven inbox delivery.
-  try {
-    const { error } = await supabase
-      .from("interest_registrations")
-      .update({
-        confirmation_email_status: emailAccepted ? "sent" : "failed",
-        confirmation_email_sent_at: emailAccepted
-          ? new Date().toISOString()
-          : null,
-      })
-      .eq("id", registrationId);
+    try {
+      emailAccepted = await sendInterestConfirmation({
+        registrationId,
+        email,
+      });
+    } catch {
+      console.error(
+        "Interest registration saved; confirmation outcome unavailable.",
+      );
 
-    if (error) {
-      console.error("Confirmation status update failed:", error.code);
+      // Leave the existing pending status for manual review.
+      return false;
     }
-  } catch {
-    console.error("Confirmation status could not be updated.");
+
+    // "sent" means Resend accepted the email,
+    // not proven inbox delivery.
+    try {
+      const { error } = await supabase
+        .from("interest_registrations")
+        .update({
+          confirmation_email_status: emailAccepted
+            ? "sent"
+            : "failed",
+          confirmation_email_sent_at: emailAccepted
+            ? new Date().toISOString()
+            : null,
+        })
+        .eq("id", registrationId);
+
+      if (error) {
+        console.error(
+          "Confirmation status update failed:",
+          error.code,
+        );
+      }
+    } catch {
+      console.error(
+        "Confirmation status could not be updated.",
+      );
+    }
+
+    return emailAccepted;
   }
 
+  // Process both emails independently.
+  const emailResults = await Promise.allSettled([
+    processInterestConfirmation(),
+
+    processAdminNotification({
+      database: supabase,
+      eventId: registrationId,
+      eventType: "interest_registration",
+    }),
+  ]);
+
+  const confirmationResult = emailResults[0];
+
+  const emailAccepted =
+    confirmationResult.status === "fulfilled" &&
+    confirmationResult.value === true;
+
+  if (confirmationResult.status === "rejected") {
+    console.error(
+      "Interest confirmation processing failed.",
+    );
+  }
+
+  if (emailResults[1].status === "rejected") {
+    console.error(
+      "Interest admin notification processing failed.",
+    );
+  }
+
+  // The public response depends on the participant confirmation,
+  // not the internal administrator notification.
   return redirectToForm(
     request,
     emailAccepted ? "success" : "success_no_email",
