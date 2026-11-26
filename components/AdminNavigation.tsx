@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -18,6 +19,10 @@ const sections = [
   {
     href: "/admin/facilitators",
     label: "Facilitator applications",
+  },
+  {
+    href: "/admin/emails",
+    label: "Email Health",
   },
 ];
 

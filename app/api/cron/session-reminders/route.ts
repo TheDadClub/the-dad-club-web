@@ -1,6 +1,11 @@
+
 import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { processSessionReminders } from "../../../../lib/processSessionReminders";
+import {
+  startEmailProcessorRun,
+  finishEmailProcessorRun,
+} from "../../../../lib/emailProcessorHealth";
 
 export const maxDuration = 120;
 
@@ -37,11 +42,28 @@ export async function GET(request: NextRequest) {
     return json({ error: "Unauthorized." }, 401);
   }
 
+  // Only authenticated requests can update processor health.
+  const run = await startEmailProcessorRun(
+    "session_reminders",
+  );
+
   try {
     const result = await processSessionReminders();
+
+    await finishEmailProcessorRun(
+      run,
+      result.enabled ? "success" : "disabled",
+    );
+
     return json(result);
   } catch {
     console.error("Session reminder scheduled job failed.");
+
+    await finishEmailProcessorRun(
+      run,
+      "failed",
+      "session_reminder_processing_failed",
+    );
 
     return json(
       { error: "Reminder processing failed." },
