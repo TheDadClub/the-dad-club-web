@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -11,7 +10,11 @@ const sections = [
   { href: "/admin/orders", label: "Orders" },
   { href: "/admin/sessions", label: "Sessions" },
   { href: "/admin/bookings", label: "Bookings" },
-  { href: "/admin/venues", label: "Venues" },
+  {
+    href: "/admin/venues/outreach",
+    label: "Venues",
+    activePrefix: "/admin/venues",
+  },
   {
     href: "/admin/healthcare",
     label: "Healthcare Referrals",
@@ -72,11 +75,14 @@ export default function AdminNavigation() {
       >
         <div className="mx-auto flex max-w-6xl flex-wrap gap-2 px-5 py-4 md:px-10">
           {sections.map((section) => {
+            const activePath =
+              section.activePrefix ?? section.href;
+
             const active =
               section.href === "/admin"
                 ? pathname === "/admin"
-                : pathname === section.href ||
-                  pathname.startsWith(`${section.href}/`);
+                : pathname === activePath ||
+                  pathname.startsWith(`${activePath}/`);
 
             return (
               <Link
